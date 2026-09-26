@@ -20,12 +20,11 @@ local Theme = {
         stroke   = Color3.fromRGB(45, 45, 55),
     },
     Icons = {
-        combat   = "rbxassetid://3926305904",
-        movement = "rbxassetid://3926307971",
-        visual   = "rbxassetid://3926307387",
-        misc     = "rbxassetid://3926305957",
-        search   = "rbxassetid://3926305904",
-        logo     = "rbxassetid://3926305957",
+        combat   = "rbxassetid://99199363807265",   -- sword
+        visual   = "rbxassetid://6523858422",        -- eye
+        settings = "rbxassetid://106205298246017",   -- gear
+        search   = "rbxassetid://72296609649861",    -- search
+        logo     = "rbxassetid://99199363807265",    -- sword
     },
     Font = {
         bold = Enum.Font.GothamBold,

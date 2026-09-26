@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [7] PAGES (Combat, Visual, Settings)
+  [7] PAGES (Collapsible Sections)
 ============================================================
 ]]
 
@@ -26,7 +26,7 @@ local function createPage(name)
     page.Parent = S.GUI.Content
 
     local layout = Instance.new("UIListLayout")
-    layout.Padding = UDim.new(0, 3)
+    layout.Padding = UDim.new(0, 4)
     layout.Parent = page
 
     pages[name] = page
@@ -139,38 +139,37 @@ S.Comp.makeToggle(pages["Visual"], "Enemy Hitbox", VV.EnemyHitbox, function(v) V
 S.Comp.makeInput(pages["Visual"], "Self HB Size", VV.SelfHitboxSize, function(v) VV.SelfHitboxSize = v end)
 S.Comp.makeInput(pages["Visual"], "Enemy HB Size", VV.EnemyHitboxSize, function(v) VV.EnemyHitboxSize = v end)
 
--- ===== TAB SETTINGS =====
+-- ===== TAB SETTINGS (COLLAPSIBLE) =====
 local MM = S.Config.Movement
 local XX = S.Config.Misc
 local TT = S.Config.Teleport
 
-S.Comp.makeLabel(pages["Settings"], "PLAYER UTILITY")
-S.Comp.makeInput(pages["Settings"], "Speed Value", MM.WalkSpeed, function(v) MM.WalkSpeed = v end)
-S.Comp.makeToggle(pages["Settings"], "No Clip", MM.Noclip, function(v) MM.Noclip = v end)
-S.Comp.makeToggle(pages["Settings"], "Fly", MM.Fly, function(v) MM.Fly = v end)
-S.Comp.makeToggle(pages["Settings"], "Infinite Jump", MM.InfJump, function(v) MM.InfJump = v end)
-S.Comp.makeInput(pages["Settings"], "Fly Speed", MM.FlySpeed, function(v) MM.FlySpeed = v end)
-S.Comp.makeInput(pages["Settings"], "Hip Height", MM.HipHeight, function(v) MM.HipHeight = v end)
-S.Comp.makeInput(pages["Settings"], "Jump Power", MM.JumpPower, function(v) MM.JumpPower = v end)
+-- Section 1
+local utilityContent, updateUtility = S.Comp.makeSection(pages["Settings"], "Player Utility", true)
+S.Comp.makeInput(utilityContent, "Speed Value", MM.WalkSpeed, function(v) MM.WalkSpeed = v end)
+S.Comp.makeToggle(utilityContent, "No Clip", MM.Noclip, function(v) MM.Noclip = v end)
+S.Comp.makeToggle(utilityContent, "Fly", MM.Fly, function(v) MM.Fly = v end)
+S.Comp.makeToggle(utilityContent, "Infinite Jump", MM.InfJump, function(v) MM.InfJump = v end)
+S.Comp.makeInput(utilityContent, "Fly Speed", MM.FlySpeed, function(v) MM.FlySpeed = v end)
+S.Comp.makeInput(utilityContent, "Hip Height", MM.HipHeight, function(v) MM.HipHeight = v end)
+S.Comp.makeInput(utilityContent, "Jump Power", MM.JumpPower, function(v) MM.JumpPower = v end)
+task.spawn(function() task.wait(0.1) updateUtility() end)
 
-S.Comp.makeLabel(pages["Settings"], "MISC")
-S.Comp.makeToggle(pages["Settings"], "Weapon Range", XX.WeaponRange, function(v) XX.WeaponRange = v end)
-S.Comp.makeToggle(pages["Settings"], "Auto Teleport", XX.AutoTP, function(v) XX.AutoTP = v end)
-S.Comp.makeToggle(pages["Settings"], "Anti-AFK", XX.AntiAFK, function(v) XX.AntiAFK = v end)
-S.Comp.makeInput(pages["Settings"], "Range Multi", XX.RangeMultiplier, function(v) XX.RangeMultiplier = v end)
-S.Comp.makeInput(pages["Settings"], "TP Range", XX.AutoTPRange, function(v) XX.AutoTPRange = v end)
+-- Section 2
+local miscContent, updateMisc = S.Comp.makeSection(pages["Settings"], "Misc", false)
+S.Comp.makeToggle(miscContent, "Weapon Range", XX.WeaponRange, function(v) XX.WeaponRange = v end)
+S.Comp.makeToggle(miscContent, "Auto Teleport", XX.AutoTP, function(v) XX.AutoTP = v end)
+S.Comp.makeToggle(miscContent, "Anti-AFK", XX.AntiAFK, function(v) XX.AntiAFK = v end)
+S.Comp.makeInput(miscContent, "Range Multi", XX.RangeMultiplier, function(v) XX.RangeMultiplier = v end)
+S.Comp.makeInput(miscContent, "TP Range", XX.AutoTPRange, function(v) XX.AutoTPRange = v end)
+task.spawn(function() task.wait(0.1) updateMisc() end)
 
-S.Comp.makeLabel(pages["Settings"], "TELEPORT")
-S.Comp.makeToggle(pages["Settings"], "Enable Teleport", TT.Enabled, function(v)
-    TT.Enabled = v
-end)
-S.Comp.makeInput(pages["Settings"], "Smooth Steps", TT.SmoothSteps, function(v)
-    TT.SmoothSteps = v
-end)
-S.Comp.makeInput(pages["Settings"], "Offset Y", TT.OffsetY, function(v)
-    TT.OffsetY = v
-end)
-S.Comp.makeButton(pages["Settings"], "Scan Locations", function()
+-- Section 3
+local tpContent, updateTP = S.Comp.makeSection(pages["Settings"], "Teleport", false)
+S.Comp.makeToggle(tpContent, "Enable Teleport", TT.Enabled, function(v) TT.Enabled = v end)
+S.Comp.makeInput(tpContent, "Smooth Steps", TT.SmoothSteps, function(v) TT.SmoothSteps = v end)
+S.Comp.makeInput(tpContent, "Offset Y", TT.OffsetY, function(v) TT.OffsetY = v end)
+S.Comp.makeButton(tpContent, "Scan Locations", function()
     local results = _G.STHAIN.TeleportScan()
     print("=== TELEPORT SCAN ===")
     for i, r in ipairs(results) do
@@ -178,7 +177,7 @@ S.Comp.makeButton(pages["Settings"], "Scan Locations", function()
     end
     print("Total:", #results)
 end)
-S.Comp.makeButton(pages["Settings"], "TP to First Capture", function()
+S.Comp.makeButton(tpContent, "TP to First Capture", function()
     local results = _G.STHAIN.TeleportScan()
     for _, r in ipairs(results) do
         local n = string.lower(r.name)
@@ -190,7 +189,7 @@ S.Comp.makeButton(pages["Settings"], "TP to First Capture", function()
     end
     warn("Ga ada capture point")
 end)
-S.Comp.makeButton(pages["Settings"], "TP to Supply Camp", function()
+S.Comp.makeButton(tpContent, "TP to Supply Camp", function()
     local results = _G.STHAIN.TeleportScan()
     for _, r in ipairs(results) do
         local n = string.lower(r.name)
@@ -202,6 +201,7 @@ S.Comp.makeButton(pages["Settings"], "TP to Supply Camp", function()
     end
     warn("Ga ada supply camp")
 end)
+task.spawn(function() task.wait(0.1) updateTP() end)
 
 -- Drag Main Frame
 local mainDrag, mainStart, mainPos

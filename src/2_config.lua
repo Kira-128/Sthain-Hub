@@ -47,6 +47,12 @@ local Config = {
         RangeMultiplier = 3,
         AutoTPRange     = 100,
     },
+    Teleport = {
+        Enabled      = false,
+        SelectedPoint = nil,
+        SmoothSteps  = 10,
+        OffsetY      = 5,
+    },
 }
 
 _G.STHAIN.Config = Config

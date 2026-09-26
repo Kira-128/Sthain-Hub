@@ -58,23 +58,56 @@ task.spawn(function()
     end
 end)
 
--- KILL AURA
+-- KILL AURA (FIXED)
+local killAuraCD = 0
 task.spawn(function()
-    while task.wait(0.15) do
+    while task.wait(0.05) do
         if not Config.Combat.KillAura then continue end
         local hrp = Utils.getHRP()
-        if not hrp then continue end
+        local hum = Utils.getHum()
+        if not (hrp and hum) then continue end
+
+        pcall(function()
+            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        end)
+
+        local nearest, nearestDist, nearestModel = nil, Config.Combat.KillAuraRange, nil
         for _, model in pairs(workspace:GetDescendants()) do
             if Utils.isEnemy(model) then
                 local thrp = model:FindFirstChild("HumanoidRootPart")
                 if thrp then
                     local dist = (thrp.Position - hrp.Position).Magnitude
-                    if dist <= Config.Combat.KillAuraRange then
-                        hrp.CFrame = CFrame.new(hrp.Position, Vector3.new(thrp.Position.X, hrp.Position.Y, thrp.Position.Z))
-                        Utils.sendKey(Enum.KeyCode.V, 0.02)
-                        task.wait(0.1)
-                        break
+                    if dist < nearestDist then
+                        nearest = thrp
+                        nearestModel = model
+                        nearestDist = dist
                     end
+                end
+            end
+        end
+
+        if nearest and nearestModel then
+            local rayParams = RaycastParams.new()
+            rayParams.FilterType = Enum.RaycastFilterType.Exclude
+            rayParams.FilterDescendantsInstances = {LP.Character}
+            local ray = workspace:Raycast(hrp.Position, (nearest.Position - hrp.Position), rayParams)
+            local hasLOS = true
+            if ray and ray.Instance then
+                local hitModel = ray.Instance:FindFirstAncestorOfClass("Model")
+                if hitModel ~= nearestModel then hasLOS = false end
+            end
+
+            if hasLOS then
+                local myLook = hrp.CFrame.LookVector
+                local toEnemy = (nearest.Position - hrp.Position).Unit
+                if myLook:Dot(toEnemy) < 0.7 then
+                    local targetCF = CFrame.new(hrp.Position, Vector3.new(nearest.Position.X, hrp.Position.Y, nearest.Position.Z))
+                    hrp.CFrame = hrp.CFrame:Lerp(targetCF, 0.5)
+                end
+                if tick() - killAuraCD >= 0.15 then
+                    killAuraCD = tick()
+                    Utils.sendKey(Enum.KeyCode.V, 0.03)
                 end
             end
         end
@@ -115,20 +148,22 @@ task.spawn(function()
 end)
 
 -- AUTO HEAL
+local healCD = 0
 task.spawn(function()
     while task.wait(0.5) do
         if not Config.Combat.AutoHeal then continue end
         local hum = Utils.getHum()
         if hum and hum.Health > 0 then
             local pct = (hum.Health / hum.MaxHealth) * 100
-            if pct <= Config.Combat.HealThreshold then
+            if pct <= Config.Combat.HealThreshold and tick() - healCD >= 1 then
+                healCD = tick()
                 Utils.sendKey(Enum.KeyCode.H, 0.05)
             end
         end
     end
 end)
 
--- INF AMMO
+-- INF AMMO (FIXED)
 task.spawn(function()
     while task.wait(0.1) do
         if not Config.Combat.InfAmmo then continue end
@@ -139,7 +174,7 @@ task.spawn(function()
             for _, obj in pairs(tool:GetDescendants()) do
                 if obj:IsA("NumberValue") or obj:IsA("IntValue") then
                     local n = string.lower(obj.Name)
-                    if string.find(n, "ammo") or string.find(n, "bullet") then
+                    if n:find("ammo") or n:find("bullet") or n:find("mag") or n:find("clip") or n:find("round") then
                         pcall(function() obj.Value = 999 end)
                     end
                 end
@@ -148,7 +183,7 @@ task.spawn(function()
     end
 end)
 
--- ESP
+-- ESP (FIXED)
 local espCache = {}
 task.spawn(function()
     while task.wait(0.3) do
@@ -223,7 +258,7 @@ task.spawn(function()
                     local hum = model:FindFirstChildOfClass("Humanoid")
                     if hum then
                         for _, obj in pairs(objs) do
-                            if obj:IsA("BillboardGui") and obj.Name == "" then
+                            if obj:IsA("BillboardGui") then
                                 local fill = obj:FindFirstChild("Fill", true)
                                 if fill then
                                     local pct = hum.Health / hum.MaxHealth
@@ -407,7 +442,7 @@ task.spawn(function()
     end
 end)
 
--- AUTO TP
+-- AUTO TP (ke musuh terdekat)
 task.spawn(function()
     while task.wait(0.3) do
         if not Config.Misc.AutoTP then continue end
@@ -432,10 +467,73 @@ task.spawn(function()
     end
 end)
 
--- RESPAWN
-LP.CharacterAdded:Connect(function()
-    task.wait(1)
-    origHRPSize = nil
+-- ============================================================
+-- TELEPORT SYSTEM (Capture Point & Supply Camp)
+-- ============================================================
+
+-- Fungsi scan lokasi
+function _G.STHAIN.TeleportScan()
+    local results = {}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        local n = string.lower(obj.Name)
+        if n:find("capture") or n:find("base") or n:find("supply") or n:find("camp") or n:find("point") then
+            if obj:IsA("BasePart") then
+                table.insert(results, {
+                    name = obj.Name,
+                    position = obj.Position,
+                    instance = obj
+                })
+            end
+        end
+    end
+    return results
+end
+
+-- Fungsi teleport halus
+function _G.STHAIN.TeleportTo(part)
+    local char = Utils.getChar()
+    if not char then return false end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    
+    local targetPos = part.Position + Vector3.new(0, Config.Teleport.OffsetY, 0)
+    local startPos = hrp.Position
+    local steps = Config.Teleport.SmoothSteps or 10
+    
+    task.spawn(function()
+        for i = 1, steps do
+            local alpha = i / steps
+            pcall(function()
+                hrp.CFrame = CFrame.new(startPos:Lerp(targetPos, alpha))
+            end)
+            task.wait(0.03)
+        end
+    end)
+    return true
+end
+
+-- Fungsi teleport instan (risiko tinggi)
+function _G.STHAIN.TeleportInstant(part)
+    local char = Utils.getChar()
+    if not char then return false end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    pcall(function()
+        hrp.CFrame = CFrame.new(part.Position + Vector3.new(0, Config.Teleport.OffsetY, 0))
+    end)
+    return true
+end
+
+-- Auto TP ke capture point kalau enabled
+task.spawn(function()
+    while task.wait(0.5) do
+        if Config.Teleport.Enabled and Config.Teleport.SelectedPoint then
+            local point = Config.Teleport.SelectedPoint
+            if point and point.Parent then
+                _G.STHAIN.TeleportTo(point)
+            end
+        end
+    end
 end)
 
-print("[STHAIN] Logic loops started")
+print("[STHAIN] Logic loops started + Teleport System")

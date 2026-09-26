@@ -21,7 +21,7 @@ local Theme = {
     },
     Icons = {
         combat   = "rbxassetid://99199363807265",   -- sword
-        visual   = "rbxassetid://6523858422",        -- eye
+        visual   = "rbxassetid://127234874352422",        -- eye
         settings = "rbxassetid://106205298246017",   -- gear
         search   = "rbxassetid://72296609649861",    -- search
         logo     = "rbxassetid://99199363807265",    -- sword

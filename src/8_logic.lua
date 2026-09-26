@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [8] LOGIC LOOPS (PC + Mobile)
+  [8] LOGIC LOOPS (FIXED + IMPROVED)
 ============================================================
 ]]
 
@@ -13,7 +13,9 @@ local Lighting = S.Services.Lighting
 local Cam = S.Cam
 local LP = S.LP
 
+-- ============================================================
 -- MOVEMENT
+-- ============================================================
 Run.RenderStepped:Connect(function()
     local hum = Utils.getHum()
     if hum then
@@ -23,26 +25,76 @@ Run.RenderStepped:Connect(function()
     end
 end)
 
--- NOCLIP
+-- ============================================================
+-- NOCLIP (FIXED — anti jatuh ke tanah)
+-- ============================================================
+local lastSafePos = nil
+
 Run.Stepped:Connect(function()
     if not Config.Movement.Noclip then return end
     local char = Utils.getChar()
     if not char then return end
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then part.CanCollide = false end
-    end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
     local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then pcall(function() hum:ChangeState(Enum.HumanoidStateType.Physics) end) end
+    if not (hrp and hum) then return end
+
+    -- Set state biar ga jatuh
+    pcall(function()
+        hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        hum:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
+        hum:ChangeState(Enum.HumanoidStateType.Running)
+    end)
+
+    -- Matiin collision
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.CanCollide then
+            part.CanCollide = false
+        end
+    end
+
+    -- Anti jatuh (kalau ga lagi fly)
+    if not Config.Movement.Fly then
+        if hrp.Velocity.Y < -10 then
+            hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+        end
+    end
+
+    -- Simpen posisi aman
+    if hrp.Position.Y > -50 then
+        lastSafePos = hrp.Position
+    end
 end)
 
--- INFINITE JUMP
+-- Anti fall (restore kalau jatuh ke bawah map)
+task.spawn(function()
+    while task.wait(0.5) do
+        if not Config.Movement.Noclip then continue end
+        local hrp = Utils.getHRP()
+        if hrp and hrp.Position.Y < -50 and lastSafePos then
+            hrp.CFrame = CFrame.new(lastSafePos + Vector3.new(0, 5, 0))
+            hrp.Velocity = Vector3.zero
+            print("[Noclip] Restored from fall")
+        end
+    end
+end)
+
+-- ============================================================
+-- INFINITE JUMP (FIXED)
+-- ============================================================
 UIS.JumpRequest:Connect(function()
     if not Config.Movement.InfJump then return end
     local hum = Utils.getHum()
-    if hum then pcall(function() hum:ChangeState(Enum.HumanoidStateType.Jumping) end) end
+    if hum then
+        pcall(function()
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end)
+    end
 end)
 
+-- ============================================================
 -- AUTO ATTACK / RUSH
+-- ============================================================
 local atkTimer, rushTimer = 0, 0
 task.spawn(function()
     while task.wait(0.05) do
@@ -58,7 +110,9 @@ task.spawn(function()
     end
 end)
 
+-- ============================================================
 -- KILL AURA (FIXED)
+-- ============================================================
 local killAuraCD = 0
 task.spawn(function()
     while task.wait(0.05) do
@@ -88,6 +142,7 @@ task.spawn(function()
         end
 
         if nearest and nearestModel then
+            -- Cek line of sight
             local rayParams = RaycastParams.new()
             rayParams.FilterType = Enum.RaycastFilterType.Exclude
             rayParams.FilterDescendantsInstances = {LP.Character}
@@ -114,7 +169,9 @@ task.spawn(function()
     end
 end)
 
+-- ============================================================
 -- TARGET LOCK
+-- ============================================================
 local origCamType = Cam.CameraType
 task.spawn(function()
     while task.wait(0.05) do
@@ -147,7 +204,9 @@ task.spawn(function()
     end
 end)
 
--- AUTO HEAL
+-- ============================================================
+-- AUTO HEAL (FIXED — cooldown)
+-- ============================================================
 local healCD = 0
 task.spawn(function()
     while task.wait(0.5) do
@@ -163,7 +222,9 @@ task.spawn(function()
     end
 end)
 
--- INF AMMO (FIXED)
+-- ============================================================
+-- INF AMMO (FIXED — scan lebih luas)
+-- ============================================================
 task.spawn(function()
     while task.wait(0.1) do
         if not Config.Combat.InfAmmo then continue end
@@ -183,7 +244,9 @@ task.spawn(function()
     end
 end)
 
--- ESP (FIXED)
+-- ============================================================
+-- ESP (FIXED — cache + health update)
+-- ============================================================
 local espCache = {}
 task.spawn(function()
     while task.wait(0.3) do
@@ -273,7 +336,9 @@ task.spawn(function()
     end
 end)
 
+-- ============================================================
 -- FLY
+-- ============================================================
 local flyBV, flyBG, flyConn
 local function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
@@ -318,7 +383,9 @@ task.spawn(function()
     end
 end)
 
+-- ============================================================
 -- FULLBRIGHT / NO FOG
+-- ============================================================
 local origBright = Lighting.Brightness
 local origAmbient = Lighting.Ambient
 local origOutdoor = Lighting.OutdoorAmbient
@@ -338,7 +405,9 @@ task.spawn(function()
     end
 end)
 
--- INVISIBLE
+-- ============================================================
+-- INVISIBLE (LOCAL)
+-- ============================================================
 task.spawn(function()
     while task.wait(0.3) do
         local char = Utils.getChar()
@@ -363,7 +432,9 @@ task.spawn(function()
     end
 end)
 
+-- ============================================================
 -- HITBOX
+-- ============================================================
 local origHRPSize = nil
 task.spawn(function()
     while task.wait(0.2) do
@@ -430,7 +501,9 @@ task.spawn(function()
     end
 end)
 
+-- ============================================================
 -- ANTI-AFK
+-- ============================================================
 task.spawn(function()
     while task.wait(60) do
         if Config.Misc.AntiAFK then
@@ -442,7 +515,9 @@ task.spawn(function()
     end
 end)
 
--- AUTO TP (ke musuh terdekat)
+-- ============================================================
+-- AUTO TP
+-- ============================================================
 task.spawn(function()
     while task.wait(0.3) do
         if not Config.Misc.AutoTP then continue end
@@ -468,10 +543,9 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- TELEPORT SYSTEM (Capture Point & Supply Camp)
+-- TELEPORT SYSTEM
 -- ============================================================
 
--- Fungsi scan lokasi
 function _G.STHAIN.TeleportScan()
     local results = {}
     for _, obj in pairs(workspace:GetDescendants()) do
@@ -489,17 +563,16 @@ function _G.STHAIN.TeleportScan()
     return results
 end
 
--- Fungsi teleport halus
 function _G.STHAIN.TeleportTo(part)
     local char = Utils.getChar()
     if not char then return false end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
-    
+
     local targetPos = part.Position + Vector3.new(0, Config.Teleport.OffsetY, 0)
     local startPos = hrp.Position
     local steps = Config.Teleport.SmoothSteps or 10
-    
+
     task.spawn(function()
         for i = 1, steps do
             local alpha = i / steps
@@ -512,7 +585,6 @@ function _G.STHAIN.TeleportTo(part)
     return true
 end
 
--- Fungsi teleport instan (risiko tinggi)
 function _G.STHAIN.TeleportInstant(part)
     local char = Utils.getChar()
     if not char then return false end
@@ -524,7 +596,6 @@ function _G.STHAIN.TeleportInstant(part)
     return true
 end
 
--- Auto TP ke capture point kalau enabled
 task.spawn(function()
     while task.wait(0.5) do
         if Config.Teleport.Enabled and Config.Teleport.SelectedPoint then
@@ -536,4 +607,47 @@ task.spawn(function()
     end
 end)
 
-print("[STHAIN] Logic loops started + Teleport System")
+-- ============================================================
+-- RESPAWN HANDLER (auto re-apply pas karakter baru)
+-- ============================================================
+local function onCharacterAdded(char)
+    task.wait(1)
+
+    local hrp = char:WaitForChild("HumanoidRootPart", 5)
+    local hum = char:WaitForChild("Humanoid", 5)
+    if not (hrp and hum) then return end
+
+    print("[STHAIN] New character detected, re-applying features...")
+
+    if Config.Movement.Noclip then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+
+    if Config.Visual.Invisible then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and not part:GetAttribute("CA_Invis") then
+                part:SetAttribute("CA_Invis", true)
+                part:SetAttribute("CA_OrigTrans", part.Transparency)
+                part.Transparency = 1
+            end
+        end
+    end
+
+    if hum then
+        hum.WalkSpeed = Config.Movement.WalkSpeed
+        hum.HipHeight = Config.Movement.HipHeight
+        hum.JumpPower = Config.Movement.JumpPower
+    end
+
+    print("[STHAIN] Features re-applied!")
+end
+
+LP.CharacterAdded:Connect(onCharacterAdded)
+
+if LP.Character then
+    task.spawn(onCharacterAdded, LP.Character)
+end
+
+print("[STHAIN] Logic loops started + Teleport System + Respawn Handler")

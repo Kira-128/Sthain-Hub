@@ -48,10 +48,10 @@ local Config = {
         AutoTPRange     = 100,
     },
     Teleport = {
-        Enabled      = false,
+        Enabled       = false,
         SelectedPoint = nil,
-        SmoothSteps  = 10,
-        OffsetY      = 5,
+        SmoothSteps   = 10,
+        OffsetY       = 5,
     },
 }
 

@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [5] GUI
+  [5] GUI (PC + Mobile)
 ============================================================
 ]]
 
@@ -39,33 +39,33 @@ fIcon.Image = I.logo
 fIcon.ImageColor3 = C.accent
 fIcon.Parent = floatBtn
 
--- DRAG
+-- DRAG (PC + Mobile)
 local dragging, dragStart, startPos
-local function updateDrag(input)
-    local delta = input.Position - dragStart
-    floatBtn.Position = UDim2.new(
-        startPos.X.Scale, startPos.X.Offset + delta.X,
-        startPos.Y.Scale, startPos.Y.Offset + delta.Y
-    )
-end
+
 floatBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = floatBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
 end)
-S.Services.UIS.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-    or input.UserInputType == Enum.UserInputType.Touch) then
-        updateDrag(input)
-    end
-end)
-S.Services.UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
+
+floatBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
     or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
+        if dragging then
+            local delta = input.Position - dragStart
+            floatBtn.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
     end
 end)
 
@@ -76,7 +76,6 @@ mainFrame.Position = UDim2.new(0.5, -250, 0.5, -180)
 mainFrame.BackgroundColor3 = C.panel
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
-mainFrame.Draggable = true
 mainFrame.Visible = false
 mainFrame.Parent = gui
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
@@ -85,6 +84,30 @@ local mStroke = Instance.new("UIStroke")
 mStroke.Color = C.stroke
 mStroke.Thickness = 1
 mStroke.Parent = mainFrame
+
+-- DRAG MAIN FRAME (support touch)
+local mainDrag, mainStart, mainPos
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        mainDrag = true
+        mainStart = input.Position
+        mainPos = mainFrame.Position
+    end
+end)
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch and mainDrag then
+        local delta = input.Position - mainStart
+        mainFrame.Position = UDim2.new(
+            mainPos.X.Scale, mainPos.X.Offset + delta.X,
+            mainPos.Y.Scale, mainPos.Y.Offset + delta.Y
+        )
+    end
+end)
+mainFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        mainDrag = false
+    end
+end)
 
 -- HEADER
 local header = Instance.new("Frame")
@@ -239,7 +262,7 @@ tLine.BorderSizePixel = 0
 tLine.Parent = contentPanel
 Instance.new("UICorner", tLine).CornerRadius = UDim.new(1, 0)
 
--- SIMPAN REFERENSI
+-- SIMPAN
 S.GUI = {
     Screen = gui,
     FloatBtn = floatBtn,

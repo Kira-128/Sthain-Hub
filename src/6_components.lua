@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [6] COMPONENTS
+  [6] COMPONENTS (Collapsible Section)
 ============================================================
 ]]
 
@@ -98,21 +98,6 @@ function Comp.makeInput(parent, name, default, callback)
     end)
 end
 
-function Comp.makeLabel(parent, text)
-    local l = Instance.new("TextLabel")
-    l.Size = UDim2.new(1, -4, 0, 20)
-    l.Text = text
-    l.TextColor3 = C.accent
-    l.TextSize = 10
-    l.Font = F.bold
-    l.TextXAlignment = Enum.TextXAlignment.Left
-    l.BackgroundTransparency = 1
-    l.Parent = parent
-
-    local pad = Instance.new("UIPadding", l)
-    pad.PaddingLeft = UDim.new(0, 4)
-end
-
 function Comp.makeButton(parent, name, callback)
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(1, -4, 0, 30)
@@ -135,6 +120,85 @@ function Comp.makeButton(parent, name, callback)
     b.MouseLeave:Connect(function()
         S.Services.TS:Create(b, TweenInfo.new(0.15), {BackgroundColor3 = C.bg3}):Play()
     end)
+end
+
+-- COLLAPSIBLE SECTION
+function Comp.makeSection(parent, title, defaultOpen)
+    local section = Instance.new("Frame")
+    section.Size = UDim2.new(1, -4, 0, 28)
+    section.BackgroundTransparency = 1
+    section.Parent = parent
+
+    local sectionLayout = Instance.new("UIListLayout")
+    sectionLayout.Padding = UDim.new(0, 3)
+    sectionLayout.Parent = section
+
+    local header = Instance.new("TextButton")
+    header.Size = UDim2.new(1, 0, 0, 28)
+    header.Text = ""
+    header.BackgroundColor3 = C.bg2
+    header.BorderSizePixel = 0
+    header.AutoButtonColor = false
+    header.Parent = section
+    Instance.new("UICorner", header).CornerRadius = UDim.new(0, 5)
+
+    local arrow = Instance.new("TextLabel")
+    arrow.Size = UDim2.new(0, 16, 1, 0)
+    arrow.Position = UDim2.new(0, 6, 0, 0)
+    arrow.Text = defaultOpen and "▼" or "▶"
+    arrow.TextColor3 = C.accent
+    arrow.TextSize = 10
+    arrow.Font = F.bold
+    arrow.BackgroundTransparency = 1
+    arrow.Parent = header
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -30, 1, 0)
+    titleLbl.Position = UDim2.new(0, 24, 0, 0)
+    titleLbl.Text = title
+    titleLbl.TextColor3 = C.text
+    titleLbl.TextSize = 11
+    titleLbl.Font = F.bold
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Parent = header
+
+    local content = Instance.new("Frame")
+    content.Size = UDim2.new(1, 0, 0, 0)
+    content.BackgroundTransparency = 1
+    content.Visible = defaultOpen
+    content.Parent = section
+
+    local contentLayout = Instance.new("UIListLayout")
+    contentLayout.Padding = UDim.new(0, 3)
+    contentLayout.Parent = content
+
+    local isOpen = defaultOpen
+
+    local function updateHeight()
+        if isOpen then
+            local totalH = 0
+            for _, child in pairs(content:GetChildren()) do
+                if child:IsA("Frame") then
+                    totalH = totalH + child.Size.Y.Offset + 3
+                end
+            end
+            content.Size = UDim2.new(1, 0, 0, totalH)
+            section.Size = UDim2.new(1, -4, 0, 28 + totalH + 3)
+        else
+            content.Size = UDim2.new(1, 0, 0, 0)
+            section.Size = UDim2.new(1, -4, 0, 28)
+        end
+    end
+
+    header.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        arrow.Text = isOpen and "▼" or "▶"
+        content.Visible = isOpen
+        updateHeight()
+    end)
+
+    return content, updateHeight
 end
 
 S.Comp = Comp

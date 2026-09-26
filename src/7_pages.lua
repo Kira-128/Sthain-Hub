@@ -142,6 +142,7 @@ S.Comp.makeInput(pages["Visual"], "Enemy HB Size", VV.EnemyHitboxSize, function(
 -- ===== TAB SETTINGS =====
 local MM = S.Config.Movement
 local XX = S.Config.Misc
+local TT = S.Config.Teleport
 
 S.Comp.makeLabel(pages["Settings"], "PLAYER UTILITY")
 S.Comp.makeInput(pages["Settings"], "Speed Value", MM.WalkSpeed, function(v) MM.WalkSpeed = v end)
@@ -158,6 +159,49 @@ S.Comp.makeToggle(pages["Settings"], "Auto Teleport", XX.AutoTP, function(v) XX.
 S.Comp.makeToggle(pages["Settings"], "Anti-AFK", XX.AntiAFK, function(v) XX.AntiAFK = v end)
 S.Comp.makeInput(pages["Settings"], "Range Multi", XX.RangeMultiplier, function(v) XX.RangeMultiplier = v end)
 S.Comp.makeInput(pages["Settings"], "TP Range", XX.AutoTPRange, function(v) XX.AutoTPRange = v end)
+
+S.Comp.makeLabel(pages["Settings"], "TELEPORT")
+S.Comp.makeToggle(pages["Settings"], "Enable Teleport", TT.Enabled, function(v)
+    TT.Enabled = v
+end)
+S.Comp.makeInput(pages["Settings"], "Smooth Steps", TT.SmoothSteps, function(v)
+    TT.SmoothSteps = v
+end)
+S.Comp.makeInput(pages["Settings"], "Offset Y", TT.OffsetY, function(v)
+    TT.OffsetY = v
+end)
+S.Comp.makeButton(pages["Settings"], "Scan Locations", function()
+    local results = _G.STHAIN.TeleportScan()
+    print("=== TELEPORT SCAN ===")
+    for i, r in ipairs(results) do
+        print(i .. ". " .. r.name .. " @ " .. tostring(r.position))
+    end
+    print("Total:", #results)
+end)
+S.Comp.makeButton(pages["Settings"], "TP to First Capture", function()
+    local results = _G.STHAIN.TeleportScan()
+    for _, r in ipairs(results) do
+        local n = string.lower(r.name)
+        if n:find("capture") or n:find("base") then
+            _G.STHAIN.TeleportTo(r.instance)
+            print("TP to:", r.name)
+            return
+        end
+    end
+    warn("Ga ada capture point")
+end)
+S.Comp.makeButton(pages["Settings"], "TP to Supply Camp", function()
+    local results = _G.STHAIN.TeleportScan()
+    for _, r in ipairs(results) do
+        local n = string.lower(r.name)
+        if n:find("supply") or n:find("camp") then
+            _G.STHAIN.TeleportTo(r.instance)
+            print("TP to:", r.name)
+            return
+        end
+    end
+    warn("Ga ada supply camp")
+end)
 
 -- Drag Main Frame
 local mainDrag, mainStart, mainPos

@@ -113,4 +113,28 @@ function Comp.makeLabel(parent, text)
     pad.PaddingLeft = UDim.new(0, 4)
 end
 
+function Comp.makeButton(parent, name, callback)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, -4, 0, 30)
+    b.Text = name
+    b.TextColor3 = C.text
+    b.TextSize = 10
+    b.Font = F.norm
+    b.BackgroundColor3 = C.bg3
+    b.BorderSizePixel = 0
+    b.AutoButtonColor = false
+    b.Parent = parent
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 5)
+
+    b.MouseButton1Click:Connect(function()
+        pcall(callback)
+    end)
+    b.MouseEnter:Connect(function()
+        S.Services.TS:Create(b, TweenInfo.new(0.15), {BackgroundColor3 = C.bg4}):Play()
+    end)
+    b.MouseLeave:Connect(function()
+        S.Services.TS:Create(b, TweenInfo.new(0.15), {BackgroundColor3 = C.bg3}):Play()
+    end)
+end
+
 S.Comp = Comp

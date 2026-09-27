@@ -24,7 +24,7 @@ local Theme = {
         visual   = "rbxassetid://127234874352422",        -- eye
         settings = "rbxassetid://106205298246017",   -- gear
         search   = "rbxassetid://72296609649861",    -- search
-        logo     = "rbxassetid://99199363807265",    -- sword
+        logo     = "rbxassetid://76866293457661",    -- sthain
     },
     Font = {
         bold = Enum.Font.GothamBold,

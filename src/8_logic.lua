@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [8] LOGIC LOOPS (FIXED + IMPROVED)
+  [8] LOGIC LOOPS (FULL FIX - PC + Mobile)
 ============================================================
 ]]
 
@@ -26,7 +26,7 @@ Run.RenderStepped:Connect(function()
 end)
 
 -- ============================================================
--- NOCLIP (FIXED — anti jatuh ke tanah)
+-- NOCLIP (FIX - anti jatuh ke tanah)
 -- ============================================================
 local lastSafePos = nil
 
@@ -34,39 +34,34 @@ Run.Stepped:Connect(function()
     if not Config.Movement.Noclip then return end
     local char = Utils.getChar()
     if not char then return end
-
     local hrp = char:FindFirstChild("HumanoidRootPart")
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not (hrp and hum) then return end
 
-    -- Set state biar ga jatuh
     pcall(function()
         hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
         hum:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
         hum:ChangeState(Enum.HumanoidStateType.Running)
     end)
 
-    -- Matiin collision
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") and part.CanCollide then
             part.CanCollide = false
         end
     end
 
-    -- Anti jatuh (kalau ga lagi fly)
     if not Config.Movement.Fly then
         if hrp.Velocity.Y < -10 then
             hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
         end
     end
 
-    -- Simpen posisi aman
     if hrp.Position.Y > -50 then
         lastSafePos = hrp.Position
     end
 end)
 
--- Anti fall (restore kalau jatuh ke bawah map)
+-- Anti fall
 task.spawn(function()
     while task.wait(0.5) do
         if not Config.Movement.Noclip then continue end
@@ -80,15 +75,38 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- INFINITE JUMP (FIXED)
+-- INFINITE JUMP (FIX - mobile support)
 -- ============================================================
-UIS.JumpRequest:Connect(function()
-    if not Config.Movement.InfJump then return end
-    local hum = Utils.getHum()
-    if hum then
-        pcall(function()
-            hum:ChangeState(Enum.HumanoidStateType.Jumping)
-        end)
+task.spawn(function()
+    while task.wait(0.1) do
+        if not Config.Movement.InfJump then continue end
+        local hum = Utils.getHum()
+        if hum then
+            local state = hum:GetState()
+            if state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Jumping then
+                pcall(function()
+                    hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                end)
+            end
+        end
+    end
+end)
+
+-- ============================================================
+-- ANTI-STUN (BARU)
+-- ============================================================
+task.spawn(function()
+    while task.wait(0.5) do
+        if not Config.Combat.AntiStun then continue end
+        local hum = Utils.getHum()
+        if hum then
+            pcall(function()
+                hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+                hum:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, false)
+                hum:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+            end)
+        end
     end
 end)
 
@@ -111,7 +129,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- KILL AURA (FIXED)
+-- KILL AURA (FIX)
 -- ============================================================
 local killAuraCD = 0
 task.spawn(function()
@@ -121,13 +139,8 @@ task.spawn(function()
         local hum = Utils.getHum()
         if not (hrp and hum) then continue end
 
-        pcall(function()
-            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-            hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-        end)
-
         local nearest, nearestDist, nearestModel = nil, Config.Combat.KillAuraRange, nil
-        for _, model in pairs(workspace:GetDescendants()) do
+        for _, model in pairs(workspace:GetChildren()) do
             if Utils.isEnemy(model) then
                 local thrp = model:FindFirstChild("HumanoidRootPart")
                 if thrp then
@@ -142,7 +155,6 @@ task.spawn(function()
         end
 
         if nearest and nearestModel then
-            -- Cek line of sight
             local rayParams = RaycastParams.new()
             rayParams.FilterType = Enum.RaycastFilterType.Exclude
             rayParams.FilterDescendantsInstances = {LP.Character}
@@ -179,7 +191,7 @@ task.spawn(function()
             local hrp = Utils.getHRP()
             if hrp then
                 local nearest, nearestDist = nil, 100
-                for _, model in pairs(workspace:GetDescendants()) do
+                for _, model in pairs(workspace:GetChildren()) do
                     if Utils.isEnemy(model) then
                         local thrp = model:FindFirstChild("HumanoidRootPart")
                         if thrp then
@@ -205,7 +217,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO HEAL (FIXED — cooldown)
+-- AUTO HEAL
 -- ============================================================
 local healCD = 0
 task.spawn(function()
@@ -223,7 +235,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- INF AMMO (FIXED — scan lebih luas)
+-- INF AMMO
 -- ============================================================
 task.spawn(function()
     while task.wait(0.1) do
@@ -245,9 +257,45 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ESP (FIXED — cache + health update)
+-- WEAPON RANGE (BARU)
+-- ============================================================
+task.spawn(function()
+    while task.wait(0.5) do
+        if not Config.Misc.WeaponRange then continue end
+        local char = Utils.getChar()
+        if not char then continue end
+        local tool = char:FindFirstChildOfClass("Tool")
+        if tool then
+            for _, obj in pairs(tool:GetDescendants()) do
+                if obj:IsA("NumberValue") or obj:IsA("IntValue") then
+                    local n = string.lower(obj.Name)
+                    if n:find("range") or n:find("distance") or n:find("reach") then
+                        if not obj:GetAttribute("CA_Orig") then
+                            obj:SetAttribute("CA_Orig", obj.Value)
+                        end
+                        local orig = obj:GetAttribute("CA_Orig")
+                        pcall(function() obj.Value = orig * Config.Misc.RangeMultiplier end)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- ============================================================
+-- ESP (FULL - Box + Tracer + Health + Name + Chams)
 -- ============================================================
 local espCache = {}
+local espDrawing = {}
+
+-- Cleanup Drawing
+local function cleanupDrawing()
+    for _, d in pairs(espDrawing) do
+        pcall(function() d:Remove() end)
+    end
+    espDrawing = {}
+end
+
 task.spawn(function()
     while task.wait(0.3) do
         local active = Config.Visual.ESPBox or Config.Visual.ESPTracer or Config.Visual.ESPHealth or Config.Visual.ESPName or Config.Visual.Chams
@@ -256,13 +304,16 @@ task.spawn(function()
                 for _, obj in pairs(objs) do pcall(function() obj:Destroy() end) end
             end
             espCache = {}
+            cleanupDrawing()
         else
-            for _, model in pairs(workspace:GetDescendants()) do
+            for _, model in pairs(workspace:GetChildren()) do
                 if Utils.isEnemy(model) and not espCache[model] then
                     local hrp = model:FindFirstChild("HumanoidRootPart")
                     local hum = model:FindFirstChildOfClass("Humanoid")
                     if hrp and hum then
                         local objs = {}
+
+                        -- Chams (Highlight)
                         if Config.Visual.Chams then
                             local hl = Instance.new("Highlight")
                             hl.FillColor = Color3.fromRGB(255, 0, 0)
@@ -271,6 +322,8 @@ task.spawn(function()
                             hl.Parent = S.GUI.Screen
                             table.insert(objs, hl)
                         end
+
+                        -- ESP Name
                         if Config.Visual.ESPName then
                             local bb = Instance.new("BillboardGui")
                             bb.Size = UDim2.new(0, 120, 0, 24)
@@ -289,6 +342,8 @@ task.spawn(function()
                             nameLbl.Parent = bb
                             table.insert(objs, bb)
                         end
+
+                        -- ESP Health
                         if Config.Visual.ESPHealth then
                             local hb = Instance.new("BillboardGui")
                             hb.Size = UDim2.new(0, 60, 0, 6)
@@ -309,10 +364,13 @@ task.spawn(function()
                             fill.Parent = bg
                             table.insert(objs, hb)
                         end
+
                         espCache[model] = objs
                     end
                 end
             end
+
+            -- Update health
             for model, objs in pairs(espCache) do
                 if not model.Parent then
                     for _, obj in pairs(objs) do pcall(function() obj:Destroy() end) end
@@ -336,14 +394,57 @@ task.spawn(function()
     end
 end)
 
+-- ESP Box + Tracer (pake Drawing kalau support, kalau enggak skip)
+task.spawn(function()
+    if not Drawing then return end
+    while task.wait(0.05) do
+        local active = Config.Visual.ESPBox or Config.Visual.ESPTracer
+        if not active then
+            cleanupDrawing()
+        else
+            cleanupDrawing()
+            local cam = workspace.CurrentCamera
+            for _, model in pairs(workspace:GetChildren()) do
+                if Utils.isEnemy(model) then
+                    local hrp = model:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        local pos, onScreen = Utils.worldToScreen(hrp.Position)
+                        if onScreen then
+                            if Config.Visual.ESPBox then
+                                local box = Drawing.new("Square")
+                                box.Thickness = 1
+                                box.Color = Color3.fromRGB(255, 0, 0)
+                                box.Filled = false
+                                box.Size = Vector2.new(50, 50)
+                                box.Position = Vector2.new(pos.X - 25, pos.Y - 25)
+                                box.Visible = true
+                                table.insert(espDrawing, box)
+                            end
+                            if Config.Visual.ESPTracer then
+                                local tracer = Drawing.new("Line")
+                                tracer.Thickness = 1
+                                tracer.Color = Color3.fromRGB(255, 0, 0)
+                                tracer.From = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y)
+                                tracer.To = pos
+                                tracer.Visible = true
+                                table.insert(espDrawing, tracer)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
 -- ============================================================
--- FLY
+-- FLY (FIX - pake LinearVelocity, ringan)
 -- ============================================================
-local flyBV, flyBG, flyConn
+local flyLV, flyAO, flyConn
 local function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
-    if flyBV then flyBV:Destroy() flyBV = nil end
-    if flyBG then flyBG:Destroy() flyBG = nil end
+    if flyLV then flyLV:Destroy() flyLV = nil end
+    if flyAO then flyAO:Destroy() flyAO = nil end
     local hrp = Utils.getHRP()
     if hrp then hrp.Velocity = Vector3.zero hrp.RotVelocity = Vector3.zero end
     local hum = Utils.getHum()
@@ -354,21 +455,24 @@ local function startFly()
     stopFly()
     local hrp = Utils.getHRP()
     if not hrp then return end
-    flyBV = Instance.new("BodyVelocity")
-    flyBV.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-    flyBV.Velocity = Vector3.zero
-    flyBV.Parent = hrp
-    flyBG = Instance.new("BodyGyro")
-    flyBG.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-    flyBG.P = 5000
-    flyBG.D = 500
-    flyBG.Parent = hrp
-    flyConn = Run.RenderStepped:Connect(function()
+
+    flyLV = Instance.new("LinearVelocity")
+    flyLV.MaxForce = math.huge
+    flyLV.VectorVelocity = Vector3.zero
+    flyLV.Parent = hrp
+
+    flyAO = Instance.new("AlignOrientation")
+    flyAO.Mode = Enum.OrientationAlignmentMode.OneAttachment
+    flyAO.MaxTorque = math.huge
+    flyAO.Responsiveness = 200
+    flyAO.Parent = hrp
+
+    flyConn = Run.Heartbeat:Connect(function()
         if not Config.Movement.Fly then return end
         local hum = Utils.getHum()
-        if not (hum and flyBV and flyBG) then return end
-        flyBG.CFrame = Cam.CFrame
-        flyBV.Velocity = hum.MoveDirection * Config.Movement.FlySpeed
+        if not (hum and flyLV and flyAO) then return end
+        flyAO.CFrame = Cam.CFrame
+        flyLV.VectorVelocity = hum.MoveDirection * Config.Movement.FlySpeed
     end)
 end
 
@@ -376,8 +480,8 @@ task.spawn(function()
     while task.wait(0.5) do
         if Config.Movement.Fly then
             local hrp = Utils.getHRP()
-            if hrp and not flyBV then startFly() end
-        elseif flyBV then
+            if hrp and not flyLV then startFly() end
+        elseif flyLV then
             stopFly()
         end
     end
@@ -406,7 +510,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- INVISIBLE (LOCAL)
+-- INVISIBLE
 -- ============================================================
 task.spawn(function()
     while task.wait(0.3) do
@@ -471,7 +575,7 @@ task.spawn(function()
             if box then box:Destroy() end
         end
         if Config.Visual.EnemyHitbox then
-            for _, model in pairs(workspace:GetDescendants()) do
+            for _, model in pairs(workspace:GetChildren()) do
                 if Utils.isEnemy(model) and not model:FindFirstChild("CA_EnemyHB") then
                     local thrp = model:FindFirstChild("HumanoidRootPart")
                     if thrp then
@@ -493,7 +597,7 @@ task.spawn(function()
                 end
             end
         else
-            for _, model in pairs(workspace:GetDescendants()) do
+            for _, model in pairs(workspace:GetChildren()) do
                 local box = model:FindFirstChild("CA_EnemyHB")
                 if box then box:Destroy() end
             end
@@ -524,7 +628,7 @@ task.spawn(function()
         local hrp = Utils.getHRP()
         if not hrp then continue end
         local nearest, nearestDist = nil, Config.Misc.AutoTPRange
-        for _, model in pairs(workspace:GetDescendants()) do
+        for _, model in pairs(workspace:GetChildren()) do
             if Utils.isEnemy(model) then
                 local thrp = model:FindFirstChild("HumanoidRootPart")
                 if thrp then
@@ -545,7 +649,6 @@ end)
 -- ============================================================
 -- TELEPORT SYSTEM
 -- ============================================================
-
 function _G.STHAIN.TeleportScan()
     local results = {}
     for _, obj in pairs(workspace:GetDescendants()) do
@@ -568,11 +671,9 @@ function _G.STHAIN.TeleportTo(part)
     if not char then return false end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
-
     local targetPos = part.Position + Vector3.new(0, Config.Teleport.OffsetY, 0)
     local startPos = hrp.Position
     local steps = Config.Teleport.SmoothSteps or 10
-
     task.spawn(function()
         for i = 1, steps do
             local alpha = i / steps
@@ -608,46 +709,19 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- RESPAWN HANDLER (auto re-apply pas karakter baru)
+-- RESPAWN HANDLER
 -- ============================================================
 local function onCharacterAdded(char)
     task.wait(1)
-
     local hrp = char:WaitForChild("HumanoidRootPart", 5)
     local hum = char:WaitForChild("Humanoid", 5)
     if not (hrp and hum) then return end
-
     print("[STHAIN] New character detected, re-applying features...")
-
-    if Config.Movement.Noclip then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = false end
-        end
-    end
-
-    if Config.Visual.Invisible then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") and not part:GetAttribute("CA_Invis") then
-                part:SetAttribute("CA_Invis", true)
-                part:SetAttribute("CA_OrigTrans", part.Transparency)
-                part.Transparency = 1
-            end
-        end
-    end
-
-    if hum then
-        hum.WalkSpeed = Config.Movement.WalkSpeed
-        hum.HipHeight = Config.Movement.HipHeight
-        hum.JumpPower = Config.Movement.JumpPower
-    end
-
+    origHRPSize = nil
+    lastSafePos = nil
     print("[STHAIN] Features re-applied!")
 end
 
 LP.CharacterAdded:Connect(onCharacterAdded)
 
-if LP.Character then
-    task.spawn(onCharacterAdded, LP.Character)
-end
-
-print("[STHAIN] Logic loops started + Teleport System + Respawn Handler")
+print("[STHAIN] Logic loops started - FULL FIX")

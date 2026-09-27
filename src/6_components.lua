@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [6] COMPONENTS (Collapsible Section)
+  [6] COMPONENTS (Collapsible Section - FIXED)
 ============================================================
 ]]
 
@@ -12,6 +12,7 @@ local Comp = {}
 
 function Comp.makeToggle(parent, name, default, callback)
     local f = Instance.new("Frame")
+    f.Name = "Toggle_" .. name
     f.Size = UDim2.new(1, -4, 0, 30)
     f.BackgroundColor3 = C.bg3
     f.BorderSizePixel = 0
@@ -62,6 +63,7 @@ end
 
 function Comp.makeInput(parent, name, default, callback)
     local f = Instance.new("Frame")
+    f.Name = "Input_" .. name
     f.Size = UDim2.new(1, -4, 0, 30)
     f.BackgroundColor3 = C.bg3
     f.BorderSizePixel = 0
@@ -100,6 +102,7 @@ end
 
 function Comp.makeButton(parent, name, callback)
     local b = Instance.new("TextButton")
+    b.Name = "Button_" .. name
     b.Size = UDim2.new(1, -4, 0, 30)
     b.Text = name
     b.TextColor3 = C.text
@@ -122,18 +125,23 @@ function Comp.makeButton(parent, name, callback)
     end)
 end
 
--- COLLAPSIBLE SECTION
+-- ===== COLLAPSIBLE SECTION (FIXED) =====
 function Comp.makeSection(parent, title, defaultOpen)
     local section = Instance.new("Frame")
+    section.Name = "Section_" .. title
     section.Size = UDim2.new(1, -4, 0, 28)
     section.BackgroundTransparency = 1
     section.Parent = parent
 
     local sectionLayout = Instance.new("UIListLayout")
     sectionLayout.Padding = UDim.new(0, 3)
+    sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
     sectionLayout.Parent = section
 
+    -- HEADER DULU (LayoutOrder = 1)
     local header = Instance.new("TextButton")
+    header.Name = "Header"
+    header.LayoutOrder = 1
     header.Size = UDim2.new(1, 0, 0, 28)
     header.Text = ""
     header.BackgroundColor3 = C.bg2
@@ -163,7 +171,10 @@ function Comp.makeSection(parent, title, defaultOpen)
     titleLbl.BackgroundTransparency = 1
     titleLbl.Parent = header
 
+    -- CONTENT KEDUA (LayoutOrder = 2)
     local content = Instance.new("Frame")
+    content.Name = "Content"
+    content.LayoutOrder = 2
     content.Size = UDim2.new(1, 0, 0, 0)
     content.BackgroundTransparency = 1
     content.Visible = defaultOpen
@@ -171,6 +182,7 @@ function Comp.makeSection(parent, title, defaultOpen)
 
     local contentLayout = Instance.new("UIListLayout")
     contentLayout.Padding = UDim.new(0, 3)
+    contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
     contentLayout.Parent = content
 
     local isOpen = defaultOpen

@@ -6,16 +6,17 @@
 
 local Config = {
     Combat = {
-        AutoAttack    = true,
-        AutoRush      = true,
-        InfAmmo       = true,
-        KillAura      = false,
-        TargetLock    = false,
-        AutoHeal      = false,
-        AttackDelay   = 0.15,
-        RushDelay     = 0.30,
-        KillAuraRange = 20,
-        HealThreshold = 30,
+        AutoAttack     = true,
+        AutoRush       = true,
+        InfAmmo        = true,
+        KillAura       = false,
+        TargetLock     = false,
+        AutoHeal       = false,
+        AntiStun       = false,   -- BARU
+        AttackDelay    = 0.15,
+        RushDelay      = 0.30,
+        KillAuraRange  = 20,
+        HealThreshold  = 30,
     },
     Movement = {
         Fly       = false,

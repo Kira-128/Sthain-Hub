@@ -1,6 +1,7 @@
 --[[
 ============================================================
-  [7] PAGES (Collapsible Sections)
+  [7] PAGES (Combat + Visual + Settings)
+  Collapsible Sections
 ============================================================
 ]]
 
@@ -111,40 +112,65 @@ makeTab(I.combat, "Combat")
 makeTab(I.visual, "Visual")
 makeTab(I.settings, "Settings")
 
--- ===== TAB COMBAT =====
+-- ============================================================
+-- TAB COMBAT
+-- ============================================================
 local CC = S.Config.Combat
-S.Comp.makeToggle(pages["Combat"], "Auto Attack (V)", CC.AutoAttack, function(v) CC.AutoAttack = v end)
-S.Comp.makeToggle(pages["Combat"], "Auto Rush (B)", CC.AutoRush, function(v) CC.AutoRush = v end)
-S.Comp.makeToggle(pages["Combat"], "Inf Ammo", CC.InfAmmo, function(v) CC.InfAmmo = v end)
-S.Comp.makeToggle(pages["Combat"], "Kill Aura", CC.KillAura, function(v) CC.KillAura = v end)
-S.Comp.makeToggle(pages["Combat"], "Target Lock", CC.TargetLock, function(v) CC.TargetLock = v end)
-S.Comp.makeToggle(pages["Combat"], "Auto Heal", CC.AutoHeal, function(v) CC.AutoHeal = v end)
-S.Comp.makeInput(pages["Combat"], "Attack Delay", CC.AttackDelay, function(v) CC.AttackDelay = v end)
-S.Comp.makeInput(pages["Combat"], "Rush Delay", CC.RushDelay, function(v) CC.RushDelay = v end)
-S.Comp.makeInput(pages["Combat"], "Kill Aura Range", CC.KillAuraRange, function(v) CC.KillAuraRange = v end)
-S.Comp.makeInput(pages["Combat"], "Heal Threshold", CC.HealThreshold, function(v) CC.HealThreshold = v end)
 
--- ===== TAB VISUAL =====
+-- Section: Auto Combat
+local autoCombat = S.Comp.makeSection(pages["Combat"], "Auto Combat", true)
+S.Comp.makeToggle(autoCombat, "Auto Attack (V)", CC.AutoAttack, function(v) CC.AutoAttack = v end)
+S.Comp.makeToggle(autoCombat, "Auto Rush (B)", CC.AutoRush, function(v) CC.AutoRush = v end)
+S.Comp.makeToggle(autoCombat, "Inf Ammo", CC.InfAmmo, function(v) CC.InfAmmo = v end)
+
+-- Section: PvP
+local pvpSection = S.Comp.makeSection(pages["Combat"], "PvP", true)
+S.Comp.makeToggle(pvpSection, "Kill Aura", CC.KillAura, function(v) CC.KillAura = v end)
+S.Comp.makeToggle(pvpSection, "Target Lock", CC.TargetLock, function(v) CC.TargetLock = v end)
+S.Comp.makeToggle(pvpSection, "Auto Heal", CC.AutoHeal, function(v) CC.AutoHeal = v end)
+S.Comp.makeToggle(pvpSection, "Anti-Stun", CC.AntiStun, function(v) CC.AntiStun = v end)
+
+-- Section: Delay Settings
+local combatDelay = S.Comp.makeSection(pages["Combat"], "Delay Settings", false)
+S.Comp.makeInput(combatDelay, "Attack Delay", CC.AttackDelay, function(v) CC.AttackDelay = v end)
+S.Comp.makeInput(combatDelay, "Rush Delay", CC.RushDelay, function(v) CC.RushDelay = v end)
+S.Comp.makeInput(combatDelay, "Kill Aura Range", CC.KillAuraRange, function(v) CC.KillAuraRange = v end)
+S.Comp.makeInput(combatDelay, "Heal Threshold", CC.HealThreshold, function(v) CC.HealThreshold = v end)
+
+-- ============================================================
+-- TAB VISUAL
+-- ============================================================
 local VV = S.Config.Visual
-S.Comp.makeToggle(pages["Visual"], "ESP Box", VV.ESPBox, function(v) VV.ESPBox = v end)
-S.Comp.makeToggle(pages["Visual"], "ESP Tracer", VV.ESPTracer, function(v) VV.ESPTracer = v end)
-S.Comp.makeToggle(pages["Visual"], "ESP Health", VV.ESPHealth, function(v) VV.ESPHealth = v end)
-S.Comp.makeToggle(pages["Visual"], "ESP Name", VV.ESPName, function(v) VV.ESPName = v end)
-S.Comp.makeToggle(pages["Visual"], "Chams", VV.Chams, function(v) VV.Chams = v end)
-S.Comp.makeToggle(pages["Visual"], "Fullbright", VV.Fullbright, function(v) VV.Fullbright = v end)
-S.Comp.makeToggle(pages["Visual"], "No Fog", VV.NoFog, function(v) VV.NoFog = v end)
-S.Comp.makeToggle(pages["Visual"], "Invisible", VV.Invisible, function(v) VV.Invisible = v end)
-S.Comp.makeToggle(pages["Visual"], "Self Hitbox", VV.SelfHitbox, function(v) VV.SelfHitbox = v end)
-S.Comp.makeToggle(pages["Visual"], "Enemy Hitbox", VV.EnemyHitbox, function(v) VV.EnemyHitbox = v end)
-S.Comp.makeInput(pages["Visual"], "Self HB Size", VV.SelfHitboxSize, function(v) VV.SelfHitboxSize = v end)
-S.Comp.makeInput(pages["Visual"], "Enemy HB Size", VV.EnemyHitboxSize, function(v) VV.EnemyHitboxSize = v end)
 
--- ===== TAB SETTINGS (COLLAPSIBLE) =====
+-- Section: ESP
+local visualESP = S.Comp.makeSection(pages["Visual"], "ESP", true)
+S.Comp.makeToggle(visualESP, "ESP Box", VV.ESPBox, function(v) VV.ESPBox = v end)
+S.Comp.makeToggle(visualESP, "ESP Tracer", VV.ESPTracer, function(v) VV.ESPTracer = v end)
+S.Comp.makeToggle(visualESP, "ESP Health", VV.ESPHealth, function(v) VV.ESPHealth = v end)
+S.Comp.makeToggle(visualESP, "ESP Name", VV.ESPName, function(v) VV.ESPName = v end)
+S.Comp.makeToggle(visualESP, "Chams", VV.Chams, function(v) VV.Chams = v end)
+
+-- Section: Rendering
+local visualRender = S.Comp.makeSection(pages["Visual"], "Rendering", true)
+S.Comp.makeToggle(visualRender, "Fullbright", VV.Fullbright, function(v) VV.Fullbright = v end)
+S.Comp.makeToggle(visualRender, "No Fog", VV.NoFog, function(v) VV.NoFog = v end)
+
+-- Section: Character
+local visualChar = S.Comp.makeSection(pages["Visual"], "Character", true)
+S.Comp.makeToggle(visualChar, "Invisible", VV.Invisible, function(v) VV.Invisible = v end)
+S.Comp.makeToggle(visualChar, "Self Hitbox", VV.SelfHitbox, function(v) VV.SelfHitbox = v end)
+S.Comp.makeInput(visualChar, "Self HB Size", VV.SelfHitboxSize, function(v) VV.SelfHitboxSize = v end)
+S.Comp.makeToggle(visualChar, "Enemy Hitbox", VV.EnemyHitbox, function(v) VV.EnemyHitbox = v end)
+S.Comp.makeInput(visualChar, "Enemy HB Size", VV.EnemyHitboxSize, function(v) VV.EnemyHitboxSize = v end)
+
+-- ============================================================
+-- TAB SETTINGS (COLLAPSIBLE)
+-- ============================================================
 local MM = S.Config.Movement
 local XX = S.Config.Misc
 local TT = S.Config.Teleport
 
--- Section 1
+-- Section: Player Utility
 local utilityContent, updateUtility = S.Comp.makeSection(pages["Settings"], "Player Utility", true)
 S.Comp.makeInput(utilityContent, "Speed Value", MM.WalkSpeed, function(v) MM.WalkSpeed = v end)
 S.Comp.makeToggle(utilityContent, "No Clip", MM.Noclip, function(v) MM.Noclip = v end)
@@ -155,7 +181,7 @@ S.Comp.makeInput(utilityContent, "Hip Height", MM.HipHeight, function(v) MM.HipH
 S.Comp.makeInput(utilityContent, "Jump Power", MM.JumpPower, function(v) MM.JumpPower = v end)
 task.spawn(function() task.wait(0.1) updateUtility() end)
 
--- Section 2
+-- Section: Misc
 local miscContent, updateMisc = S.Comp.makeSection(pages["Settings"], "Misc", false)
 S.Comp.makeToggle(miscContent, "Weapon Range", XX.WeaponRange, function(v) XX.WeaponRange = v end)
 S.Comp.makeToggle(miscContent, "Auto Teleport", XX.AutoTP, function(v) XX.AutoTP = v end)
@@ -164,7 +190,7 @@ S.Comp.makeInput(miscContent, "Range Multi", XX.RangeMultiplier, function(v) XX.
 S.Comp.makeInput(miscContent, "TP Range", XX.AutoTPRange, function(v) XX.AutoTPRange = v end)
 task.spawn(function() task.wait(0.1) updateMisc() end)
 
--- Section 3
+-- Section: Teleport
 local tpContent, updateTP = S.Comp.makeSection(pages["Settings"], "Teleport", false)
 S.Comp.makeToggle(tpContent, "Enable Teleport", TT.Enabled, function(v) TT.Enabled = v end)
 S.Comp.makeInput(tpContent, "Smooth Steps", TT.SmoothSteps, function(v) TT.SmoothSteps = v end)

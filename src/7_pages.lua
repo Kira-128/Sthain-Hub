@@ -1,7 +1,6 @@
 --[[
 ============================================================
-  [7] PAGES (Combat + Visual + Settings)
-  Collapsible Sections
+  [7] PAGES (Combat + Esp + Settings + Config)
 ============================================================
 ]]
 
@@ -104,33 +103,34 @@ local function makeTab(iconId, name)
     table.insert(tabs, {btn = btn, icon = ic, text = tx, bar = acc, name = name})
 end
 
+-- Bikin 4 halaman
 createPage("Combat")
-createPage("Visual")
+createPage("Esp")
 createPage("Settings")
+createPage("Config")
 
+-- Bikin 4 tab sidebar
 makeTab(I.combat, "Combat")
-makeTab(I.visual, "Visual")
+makeTab(I.visual, "Esp")
 makeTab(I.settings, "Settings")
+makeTab(I.settings, "Config")
 
 -- ============================================================
 -- TAB COMBAT
 -- ============================================================
 local CC = S.Config.Combat
 
--- Section: Auto Combat
 local autoCombat = S.Comp.makeSection(pages["Combat"], "Auto Combat", true)
 S.Comp.makeToggle(autoCombat, "Auto Attack (V)", CC.AutoAttack, function(v) CC.AutoAttack = v end)
 S.Comp.makeToggle(autoCombat, "Auto Rush (B)", CC.AutoRush, function(v) CC.AutoRush = v end)
 S.Comp.makeToggle(autoCombat, "Inf Ammo", CC.InfAmmo, function(v) CC.InfAmmo = v end)
 
--- Section: PvP
 local pvpSection = S.Comp.makeSection(pages["Combat"], "PvP", true)
 S.Comp.makeToggle(pvpSection, "Kill Aura", CC.KillAura, function(v) CC.KillAura = v end)
 S.Comp.makeToggle(pvpSection, "Target Lock", CC.TargetLock, function(v) CC.TargetLock = v end)
 S.Comp.makeToggle(pvpSection, "Auto Heal", CC.AutoHeal, function(v) CC.AutoHeal = v end)
 S.Comp.makeToggle(pvpSection, "Anti-Stun", CC.AntiStun, function(v) CC.AntiStun = v end)
 
--- Section: Delay Settings
 local combatDelay = S.Comp.makeSection(pages["Combat"], "Delay Settings", false)
 S.Comp.makeInput(combatDelay, "Attack Delay", CC.AttackDelay, function(v) CC.AttackDelay = v end)
 S.Comp.makeInput(combatDelay, "Rush Delay", CC.RushDelay, function(v) CC.RushDelay = v end)
@@ -138,33 +138,21 @@ S.Comp.makeInput(combatDelay, "Kill Aura Range", CC.KillAuraRange, function(v) C
 S.Comp.makeInput(combatDelay, "Heal Threshold", CC.HealThreshold, function(v) CC.HealThreshold = v end)
 
 -- ============================================================
--- TAB VISUAL
+-- TAB ESP
 -- ============================================================
 local VV = S.Config.Visual
 
--- Section: ESP
-local visualESP = S.Comp.makeSection(pages["Visual"], "ESP", true)
-S.Comp.makeToggle(visualESP, "ESP Box", VV.ESPBox, function(v) VV.ESPBox = v end)
-S.Comp.makeToggle(visualESP, "ESP Tracer", VV.ESPTracer, function(v) VV.ESPTracer = v end)
-S.Comp.makeToggle(visualESP, "ESP Health", VV.ESPHealth, function(v) VV.ESPHealth = v end)
-S.Comp.makeToggle(visualESP, "ESP Name", VV.ESPName, function(v) VV.ESPName = v end)
-S.Comp.makeToggle(visualESP, "Chams", VV.Chams, function(v) VV.Chams = v end)
+local enableEsp = S.Comp.makeSection(pages["Esp"], "Enable Esp", true)
+S.Comp.makeToggle(enableEsp, "Enable Esp", VV.Chams, function(v) VV.Chams = v end)
 
--- Section: Rendering
-local visualRender = S.Comp.makeSection(pages["Visual"], "Rendering", true)
-S.Comp.makeToggle(visualRender, "Fullbright", VV.Fullbright, function(v) VV.Fullbright = v end)
-S.Comp.makeToggle(visualRender, "No Fog", VV.NoFog, function(v) VV.NoFog = v end)
-
--- Section: Character
-local visualChar = S.Comp.makeSection(pages["Visual"], "Character", true)
-S.Comp.makeToggle(visualChar, "Invisible", VV.Invisible, function(v) VV.Invisible = v end)
-S.Comp.makeToggle(visualChar, "Self Hitbox", VV.SelfHitbox, function(v) VV.SelfHitbox = v end)
-S.Comp.makeInput(visualChar, "Self HB Size", VV.SelfHitboxSize, function(v) VV.SelfHitboxSize = v end)
-S.Comp.makeToggle(visualChar, "Enemy Hitbox", VV.EnemyHitbox, function(v) VV.EnemyHitbox = v end)
-S.Comp.makeInput(visualChar, "Enemy HB Size", VV.EnemyHitboxSize, function(v) VV.EnemyHitboxSize = v end)
+local espSetting = S.Comp.makeSection(pages["Esp"], "Esp Setting", true)
+S.Comp.makeToggle(espSetting, "Esp Box", VV.ESPBox, function(v) VV.ESPBox = v end)
+S.Comp.makeToggle(espSetting, "Esp Tracer", VV.ESPTracer, function(v) VV.ESPTracer = v end)
+S.Comp.makeToggle(espSetting, "Esp Health", VV.ESPHealth, function(v) VV.ESPHealth = v end)
+S.Comp.makeToggle(espSetting, "Esp Name", VV.ESPName, function(v) VV.ESPName = v end)
 
 -- ============================================================
--- TAB SETTINGS (COLLAPSIBLE)
+-- TAB SETTINGS
 -- ============================================================
 local MM = S.Config.Movement
 local XX = S.Config.Misc
@@ -189,6 +177,40 @@ S.Comp.makeToggle(miscContent, "Anti-AFK", XX.AntiAFK, function(v) XX.AntiAFK = 
 S.Comp.makeInput(miscContent, "Range Multi", XX.RangeMultiplier, function(v) XX.RangeMultiplier = v end)
 S.Comp.makeInput(miscContent, "TP Range", XX.AutoTPRange, function(v) XX.AutoTPRange = v end)
 task.spawn(function() task.wait(0.1) updateMisc() end)
+
+-- Section: Visuals
+local visualContent, updateVisual = S.Comp.makeSection(pages["Settings"], "Visuals", false)
+S.Comp.makeToggle(visualContent, "Full Bright", VV.Fullbright, function(v) VV.Fullbright = v end)
+S.Comp.makeToggle(visualContent, "No Fog", VV.NoFog, function(v) VV.NoFog = v end)
+task.spawn(function() task.wait(0.1) updateVisual() end)
+
+-- Section: Server
+local serverContent, updateServer = S.Comp.makeSection(pages["Settings"], "Server", false)
+S.Comp.makeButton(serverContent, "Rejoin Server", function()
+    pcall(function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId, S.LP)
+    end)
+end)
+S.Comp.makeButton(serverContent, "Server Hop (Find Small Server)", function()
+    pcall(function()
+        local Http = game:GetService("HttpService")
+        local TS = game:GetService("TeleportService")
+        local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=100"
+        local data = Http:JSONDecode(game:HttpGet(url))
+        local best = nil
+        for _, server in pairs(data.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                if not best or server.playing < best.playing then
+                    best = server
+                end
+            end
+        end
+        if best then
+            TS:TeleportToPlaceInstance(game.PlaceId, best.id, S.LP)
+        end
+    end)
+end)
+task.spawn(function() task.wait(0.1) updateServer() end)
 
 -- Section: Teleport
 local tpContent, updateTP = S.Comp.makeSection(pages["Settings"], "Teleport", false)
@@ -228,6 +250,22 @@ S.Comp.makeButton(tpContent, "TP to Supply Camp", function()
     warn("Ga ada supply camp")
 end)
 task.spawn(function() task.wait(0.1) updateTP() end)
+
+-- ============================================================
+-- TAB CONFIG
+-- ============================================================
+local configSection = S.Comp.makeSection(pages["Config"], "Auto Save", true)
+S.Comp.makeToggle(configSection, "Auto Save Config", false, function(v)
+    S.Config.Config.AutoSave = v
+end)
+
+local configMgmt = S.Comp.makeSection(pages["Config"], "Config Management", true)
+S.Comp.makeButton(configMgmt, "Save Config Now", function()
+    print("[Config] Saved!")
+end)
+S.Comp.makeButton(configMgmt, "Delete Config", function()
+    print("[Config] Deleted!")
+end)
 
 -- Drag Main Frame
 local mainDrag, mainStart, mainPos

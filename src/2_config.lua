@@ -1,20 +1,20 @@
 --[[
 ============================================================
-  [2] CONFIG
+  [2] CONFIG (FIXED - Anti Freeze Analog)
 ============================================================
 ]]
 
 local Config = {
     Combat = {
-        AutoAttack     = true,
-        AutoRush       = true,
-        InfAmmo        = true,
+        AutoAttack     = false,   -- OFF default (biar analog normal pas start)
+        AutoRush       = false,   -- OFF default
+        InfAmmo        = false,   -- OFF default
         KillAura       = false,
         TargetLock     = false,
         AutoHeal       = false,
-        AntiStun       = false,   -- BARU
-        AttackDelay    = 0.15,
-        RushDelay      = 0.30,
+        AntiStun       = false,
+        AttackDelay    = 0.35,    -- dari 0.15 (biar ga freeze)
+        RushDelay      = 0.5,     -- dari 0.30
         KillAuraRange  = 20,
         HealThreshold  = 30,
     },

@@ -25,7 +25,7 @@ local Theme = {
         settings = "rbxassetid://106205298246017",    -- gear
         config   = "rbxassetid://112330254035751",    -- config (BARU)
         search   = "rbxassetid://72296609649861",     -- search
-        logo     = "rbxassetid://75186923792073",     -- sthain
+        logo     = "rbxassetid://136526785382643",     -- sthain
     },
     Font = {
         bold = Enum.Font.GothamBold,

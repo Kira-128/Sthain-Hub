@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [6] COMPONENTS (Collapsible Section - FIXED)
+  [6] COMPONENTS (Collapsible + Dropdown)
 ============================================================
 ]]
 
@@ -125,7 +125,84 @@ function Comp.makeButton(parent, name, callback)
     end)
 end
 
--- ===== COLLAPSIBLE SECTION (FIXED) =====
+function Comp.makeDropdown(parent, name, options, callback)
+    local f = Instance.new("Frame")
+    f.Name = "Dropdown_" .. name
+    f.Size = UDim2.new(1, -4, 0, 30)
+    f.BackgroundColor3 = C.bg3
+    f.BorderSizePixel = 0
+    f.Parent = parent
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 5)
+
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(0.5, 0, 1, 0)
+    l.Position = UDim2.new(0, 8, 0, 0)
+    l.Text = name
+    l.TextColor3 = C.text
+    l.TextSize = 10
+    l.Font = F.norm
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.BackgroundTransparency = 1
+    l.Parent = f
+
+    local selected = Instance.new("TextLabel")
+    selected.Size = UDim2.new(0.45, 0, 1, 0)
+    selected.Position = UDim2.new(0.52, 0, 0, 0)
+    selected.Text = options[1] or "None"
+    selected.TextColor3 = C.accent
+    selected.TextSize = 10
+    selected.Font = F.norm
+    selected.TextXAlignment = Enum.TextXAlignment.Right
+    selected.BackgroundTransparency = 1
+    selected.Parent = f
+
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, 0, 1, 0)
+    b.Text = ""
+    b.BackgroundTransparency = 1
+    b.Parent = f
+
+    local popup = Instance.new("Frame")
+    popup.Size = UDim2.new(1, -4, 0, 0)
+    popup.Position = UDim2.new(0, 0, 1, 2)
+    popup.BackgroundColor3 = C.bg4
+    popup.BorderSizePixel = 0
+    popup.Visible = false
+    popup.ZIndex = 10
+    popup.Parent = f
+    Instance.new("UICorner", popup).CornerRadius = UDim.new(0, 5)
+
+    local popLayout = Instance.new("UIListLayout")
+    popLayout.Padding = UDim.new(0, 2)
+    popLayout.Parent = popup
+
+    for i, opt in ipairs(options) do
+        local optBtn = Instance.new("TextButton")
+        optBtn.Size = UDim2.new(1, -8, 0, 24)
+        optBtn.Text = opt
+        optBtn.TextColor3 = C.text
+        optBtn.TextSize = 10
+        optBtn.Font = F.norm
+        optBtn.BackgroundColor3 = C.bg4
+        optBtn.BorderSizePixel = 0
+        optBtn.Parent = popup
+        Instance.new("UICorner", optBtn).CornerRadius = UDim.new(0, 4)
+
+        optBtn.MouseButton1Click:Connect(function()
+            selected.Text = opt
+            popup.Visible = false
+            pcall(callback, opt)
+        end)
+    end
+    popup.Size = UDim2.new(1, -4, 0, #options * 26 + 4)
+
+    local isOpen = false
+    b.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        popup.Visible = isOpen
+    end)
+end
+
 function Comp.makeSection(parent, title, defaultOpen)
     local section = Instance.new("Frame")
     section.Name = "Section_" .. title
@@ -138,7 +215,6 @@ function Comp.makeSection(parent, title, defaultOpen)
     sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
     sectionLayout.Parent = section
 
-    -- HEADER DULU (LayoutOrder = 1)
     local header = Instance.new("TextButton")
     header.Name = "Header"
     header.LayoutOrder = 1
@@ -171,7 +247,6 @@ function Comp.makeSection(parent, title, defaultOpen)
     titleLbl.BackgroundTransparency = 1
     titleLbl.Parent = header
 
-    -- CONTENT KEDUA (LayoutOrder = 2)
     local content = Instance.new("Frame")
     content.Name = "Content"
     content.LayoutOrder = 2

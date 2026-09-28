@@ -103,13 +103,11 @@ local function makeTab(iconId, name)
     table.insert(tabs, {btn = btn, icon = ic, text = tx, bar = acc, name = name})
 end
 
--- Bikin 4 halaman
 createPage("Combat")
 createPage("Esp")
 createPage("Settings")
 createPage("Config")
 
--- Bikin 4 tab sidebar
 makeTab(I.combat, "Combat")
 makeTab(I.visual, "Esp")
 makeTab(I.settings, "Settings")
@@ -158,7 +156,6 @@ local MM = S.Config.Movement
 local XX = S.Config.Misc
 local TT = S.Config.Teleport
 
--- Section: Player Utility
 local utilityContent, updateUtility = S.Comp.makeSection(pages["Settings"], "Player Utility", true)
 S.Comp.makeInput(utilityContent, "Speed Value", MM.WalkSpeed, function(v) MM.WalkSpeed = v end)
 S.Comp.makeToggle(utilityContent, "No Clip", MM.Noclip, function(v) MM.Noclip = v end)
@@ -169,7 +166,6 @@ S.Comp.makeInput(utilityContent, "Hip Height", MM.HipHeight, function(v) MM.HipH
 S.Comp.makeInput(utilityContent, "Jump Power", MM.JumpPower, function(v) MM.JumpPower = v end)
 task.spawn(function() task.wait(0.1) updateUtility() end)
 
--- Section: Misc
 local miscContent, updateMisc = S.Comp.makeSection(pages["Settings"], "Misc", false)
 S.Comp.makeToggle(miscContent, "Weapon Range", XX.WeaponRange, function(v) XX.WeaponRange = v end)
 S.Comp.makeToggle(miscContent, "Auto Teleport", XX.AutoTP, function(v) XX.AutoTP = v end)
@@ -178,13 +174,11 @@ S.Comp.makeInput(miscContent, "Range Multi", XX.RangeMultiplier, function(v) XX.
 S.Comp.makeInput(miscContent, "TP Range", XX.AutoTPRange, function(v) XX.AutoTPRange = v end)
 task.spawn(function() task.wait(0.1) updateMisc() end)
 
--- Section: Visuals
 local visualContent, updateVisual = S.Comp.makeSection(pages["Settings"], "Visuals", false)
 S.Comp.makeToggle(visualContent, "Full Bright", VV.Fullbright, function(v) VV.Fullbright = v end)
 S.Comp.makeToggle(visualContent, "No Fog", VV.NoFog, function(v) VV.NoFog = v end)
 task.spawn(function() task.wait(0.1) updateVisual() end)
 
--- Section: Server
 local serverContent, updateServer = S.Comp.makeSection(pages["Settings"], "Server", false)
 S.Comp.makeButton(serverContent, "Rejoin Server", function()
     pcall(function()
@@ -212,7 +206,6 @@ S.Comp.makeButton(serverContent, "Server Hop (Find Small Server)", function()
 end)
 task.spawn(function() task.wait(0.1) updateServer() end)
 
--- Section: Teleport
 local tpContent, updateTP = S.Comp.makeSection(pages["Settings"], "Teleport", false)
 S.Comp.makeToggle(tpContent, "Enable Teleport", TT.Enabled, function(v) TT.Enabled = v end)
 S.Comp.makeInput(tpContent, "Smooth Steps", TT.SmoothSteps, function(v) TT.SmoothSteps = v end)
@@ -220,51 +213,42 @@ S.Comp.makeInput(tpContent, "Offset Y", TT.OffsetY, function(v) TT.OffsetY = v e
 S.Comp.makeButton(tpContent, "Scan Locations", function()
     local results = _G.STHAIN.TeleportScan()
     print("=== TELEPORT SCAN ===")
-    for i, r in ipairs(results) do
-        print(i .. ". " .. r.name .. " @ " .. tostring(r.position))
+    print("Captures:", #results.captures)
+    print("Supplies:", #results.supplies)
+    for i, s in ipairs(results.supplies) do
+        print("  " .. i .. ". " .. s.name .. " @ " .. tostring(s.pos))
     end
-    print("Total:", #results)
 end)
-S.Comp.makeButton(tpContent, "TP to First Capture", function()
-    local results = _G.STHAIN.TeleportScan()
-    for _, r in ipairs(results) do
-        local n = string.lower(r.name)
-        if n:find("capture") or n:find("base") then
-            _G.STHAIN.TeleportTo(r.instance)
-            print("TP to:", r.name)
-            return
-        end
-    end
-    warn("Ga ada capture point")
+S.Comp.makeButton(tpContent, "TP to Nearest Capture", function()
+    _G.STHAIN.TeleportToNearestCapture()
 end)
-S.Comp.makeButton(tpContent, "TP to Supply Camp", function()
-    local results = _G.STHAIN.TeleportScan()
-    for _, r in ipairs(results) do
-        local n = string.lower(r.name)
-        if n:find("supply") or n:find("camp") then
-            _G.STHAIN.TeleportTo(r.instance)
-            print("TP to:", r.name)
-            return
-        end
-    end
-    warn("Ga ada supply camp")
+S.Comp.makeButton(tpContent, "TP to Enemy Supply", function()
+    _G.STHAIN.TeleportToEnemySupply()
 end)
 task.spawn(function() task.wait(0.1) updateTP() end)
 
 -- ============================================================
 -- TAB CONFIG
 -- ============================================================
-local configSection = S.Comp.makeSection(pages["Config"], "Auto Save", true)
-S.Comp.makeToggle(configSection, "Auto Save Config", false, function(v)
-    S.Config.Config.AutoSave = v
+local cfg = S.Config.Config
+
+local autoSaveSection = S.Comp.makeSection(pages["Config"], "Auto Save", true)
+S.Comp.makeToggle(autoSaveSection, "Auto Save Config", cfg.AutoSave, function(v)
+    cfg.AutoSave = v
 end)
 
 local configMgmt = S.Comp.makeSection(pages["Config"], "Config Management", true)
 S.Comp.makeButton(configMgmt, "Save Config Now", function()
-    print("[Config] Saved!")
+    if _G.STHAIN.SaveConfig then
+        _G.STHAIN.SaveConfig()
+        print("[Config] Saved!")
+    end
 end)
 S.Comp.makeButton(configMgmt, "Delete Config", function()
-    print("[Config] Deleted!")
+    if _G.STHAIN.DeleteConfig then
+        _G.STHAIN.DeleteConfig()
+        print("[Config] Deleted!")
+    end
 end)
 
 -- Drag Main Frame

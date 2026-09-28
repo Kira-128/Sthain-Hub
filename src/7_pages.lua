@@ -103,15 +103,17 @@ local function makeTab(iconId, name)
     table.insert(tabs, {btn = btn, icon = ic, text = tx, bar = acc, name = name})
 end
 
+-- Bikin 4 halaman
 createPage("Combat")
 createPage("Esp")
 createPage("Settings")
 createPage("Config")
 
+-- Bikin 4 tab sidebar
 makeTab(I.combat, "Combat")
 makeTab(I.visual, "Esp")
 makeTab(I.settings, "Settings")
-makeTab(I.settings, "Config")
+makeTab(I.config, "Config")
 
 -- ============================================================
 -- TAB COMBAT

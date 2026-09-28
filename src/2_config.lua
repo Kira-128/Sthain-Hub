@@ -1,3 +1,9 @@
+--[[
+============================================================
+  [2] CONFIG
+============================================================
+]]
+
 local Config = {
     Combat = {
         AutoAttack     = false,
@@ -43,13 +49,14 @@ local Config = {
         AutoTPRange     = 100,
     },
     Teleport = {
-        Enabled       = false,
-        SelectedPoint = nil,
-        SmoothSteps   = 10,
-        OffsetY       = 5,
+        Enabled        = false,
+        SelectedPoint  = nil,
+        SmoothSteps    = 10,
+        OffsetY        = 5,
+        SelectedSupply = nil,
     },
     Config = {
-        AutoSave = false,
+        AutoSave = true,
     },
 }
 

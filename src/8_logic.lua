@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [8] LOGIC LOOPS (FULL DEBUGGED)
+  [8] LOGIC LOOPS (FULL FINAL)
 ============================================================
 ]]
 
@@ -52,7 +52,7 @@ Run.RenderStepped:Connect(function()
 end)
 
 -- ============================================================
--- NOCLIP (FIX)
+-- NOCLIP
 -- ============================================================
 local lastSafePos = nil
 
@@ -97,7 +97,6 @@ Run.Stepped:Connect(function()
     end
 end)
 
--- Anti fall
 task.spawn(function()
     while task.wait(0.5) do
         if Config.Movement.Noclip and lastSafePos then
@@ -148,7 +147,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO ATTACK / RUSH (cuma pas diam)
+-- AUTO ATTACK / RUSH
 -- ============================================================
 local atkTimer, rushTimer = 0, 0
 task.spawn(function()
@@ -171,7 +170,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- KILL AURA (FIX)
+-- KILL AURA
 -- ============================================================
 local killAuraCD = 0
 task.spawn(function()
@@ -229,7 +228,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- TARGET LOCK (FIX - jangan lock diri sendiri)
+-- TARGET LOCK
 -- ============================================================
 local origCamType = Cam.CameraType
 task.spawn(function()
@@ -351,7 +350,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ESP (FULL)
+-- ESP
 -- ============================================================
 local espCache = {}
 
@@ -443,7 +442,6 @@ task.spawn(function()
                 end
             end
 
-            -- Update health
             for model, objs in pairs(espCache) do
                 if not model.Parent then
                     for _, obj in pairs(objs) do pcall(function() obj:Destroy() end) end
@@ -468,7 +466,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- FLY (LinearVelocity)
+-- FLY
 -- ============================================================
 local flyLV, flyAO, flyConn
 local function stopFly()
@@ -597,7 +595,6 @@ task.spawn(function()
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then continue end
 
-        -- SELF
         if Config.Visual.SelfHitbox then
             if not origHRPSize then origHRPSize = hrp.Size end
             pcall(function() hrp.Size = Vector3.new(Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize) end)
@@ -629,7 +626,6 @@ task.spawn(function()
             State.SelfHitbox = false
         end
 
-        -- ENEMY
         if Config.Visual.EnemyHitbox then
             for _, model in pairs(workspace:GetChildren()) do
                 if model == char then continue end
@@ -682,7 +678,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO TP
+-- AUTO TP (ke musuh terdekat)
 -- ============================================================
 task.spawn(function()
     while task.wait(0.5) do
@@ -715,21 +711,56 @@ end)
 -- ============================================================
 -- TELEPORT SYSTEM
 -- ============================================================
+
 function _G.STHAIN.TeleportScan()
-    local results = {}
+    local results = {
+        captures = {},
+        supplies = {},
+        bases = {},
+    }
+    
     for _, obj in pairs(workspace:GetDescendants()) do
-        local n = string.lower(obj.Name)
-        if n:find("capture") or n:find("base") or n:find("supply") or n:find("camp") or n:find("point") then
-            if obj:IsA("BasePart") then
-                table.insert(results, {
-                    name = obj.Name,
-                    position = obj.Position,
-                    instance = obj
-                })
+        if obj:IsA("BasePart") then
+            local n = string.lower(obj.Name)
+            
+            if n:find("capture") then
+                table.insert(results.captures, {name = obj.Name, pos = obj.Position, instance = obj})
+            elseif n:find("supply") then
+                table.insert(results.supplies, {name = obj.Name, pos = obj.Position, instance = obj})
+            elseif n:find("base") then
+                table.insert(results.bases, {name = obj.Name, pos = obj.Position, instance = obj})
             end
         end
     end
+    
     return results
+end
+
+function _G.STHAIN.GetMyTeam()
+    local Plr = game.Players.LocalPlayer
+    
+    if Plr.Team then
+        local n = string.lower(Plr.Team.Name)
+        if n:find("attacker") then return "attacker" end
+        if n:find("defender") then return "defender" end
+    end
+    
+    for k, v in pairs(Plr:GetAttributes()) do
+        local val = string.lower(tostring(v))
+        if val:find("attacker") then return "attacker" end
+        if val:find("defender") then return "defender" end
+    end
+    
+    local ls = Plr:FindFirstChild("leaderstats")
+    if ls then
+        for _, v in pairs(ls:GetChildren()) do
+            local val = string.lower(tostring(v.Value))
+            if val:find("attacker") then return "attacker" end
+            if val:find("defender") then return "defender" end
+        end
+    end
+    
+    return "unknown"
 end
 
 function _G.STHAIN.TeleportTo(part)
@@ -754,15 +785,118 @@ function _G.STHAIN.TeleportTo(part)
     return true
 end
 
-task.spawn(function()
-    while task.wait(0.5) do
-        if Config.Teleport.Enabled and Config.Teleport.SelectedPoint then
-            local point = Config.Teleport.SelectedPoint
-            if point and point.Parent then
-                _G.STHAIN.TeleportTo(point)
+function _G.STHAIN.TeleportToNearestCapture()
+    local char = Utils.getChar()
+    local hrp = Utils.getHRP()
+    if not (char and hrp) then return false end
+
+    local nearest, nearestDist = nil, math.huge
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and string.lower(obj.Name):find("capture") then
+            local dist = (obj.Position - hrp.Position).Magnitude
+            if dist < nearestDist then
+                nearest = obj
+                nearestDist = dist
             end
         end
     end
+    if nearest then
+        _G.STHAIN.TeleportTo(nearest)
+        print("[TP] TP to nearest Capture")
+        return true
+    end
+    return false
+end
+
+function _G.STHAIN.TeleportToEnemySupply()
+    local myTeam = _G.STHAIN.GetMyTeam()
+    local results = _G.STHAIN.TeleportScan()
+    
+    local targetKeyword = ""
+    if myTeam == "defender" then
+        targetKeyword = "attacker"
+    elseif myTeam == "attacker" then
+        targetKeyword = "defender"
+    else
+        warn("[TP] Team ga kedeteksi. Cek team dulu.")
+        return false
+    end
+    
+    for _, supply in ipairs(results.supplies) do
+        local n = string.lower(supply.name)
+        if n:find(targetKeyword) then
+            _G.STHAIN.TeleportTo(supply.instance)
+            print("[TP] TP to:", supply.name, "| Team:", myTeam)
+            return true
+        end
+    end
+    
+    warn("[TP] Supply musuh ga ketemu. Team:", myTeam)
+    return false
+end
+
+-- ============================================================
+-- CONFIG SAVE/LOAD
+-- ============================================================
+
+function _G.STHAIN.SaveConfig()
+    if not writefile then
+        warn("[Config] writefile ga support")
+        return false
+    end
+    local ok, err = pcall(function()
+        local data = game:GetService("HttpService"):JSONEncode(_G.STHAIN.Config)
+        writefile("sthain_config.json", data)
+    end)
+    if ok then
+        print("[Config] Saved!")
+        return true
+    else
+        warn("[Config] Save failed:", err)
+        return false
+    end
+end
+
+function _G.STHAIN.LoadConfig()
+    if not readfile then return false end
+    local ok, data = pcall(function()
+        return readfile("sthain_config.json")
+    end)
+    if ok and data then
+        local ok2, decoded = pcall(function()
+            return game:GetService("HttpService"):JSONDecode(data)
+        end)
+        if ok2 then
+            for k, v in pairs(decoded) do
+                _G.STHAIN.Config[k] = v
+            end
+            print("[Config] Loaded!")
+            return true
+        end
+    end
+    return false
+end
+
+function _G.STHAIN.DeleteConfig()
+    if not delfile then return false end
+    pcall(function()
+        delfile("sthain_config.json")
+    end)
+    print("[Config] Deleted!")
+    return true
+end
+
+task.spawn(function()
+    while task.wait(30) do
+        if _G.STHAIN.Config.Config.AutoSave then
+            _G.STHAIN.SaveConfig()
+        end
+    end
+end)
+
+task.spawn(function()
+    task.wait(2)
+    _G.STHAIN.LoadConfig()
 end)
 
 -- ============================================================
@@ -782,4 +916,4 @@ LP.CharacterAdded:Connect(function(char)
     print("[STHAIN] Character respawned, features reset")
 end)
 
-print("[STHAIN] Logic loops loaded - FULL DEBUGGED")
+print("[STHAIN] Logic loops loaded - FULL FINAL")

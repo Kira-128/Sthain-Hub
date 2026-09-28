@@ -1,9 +1,3 @@
---[[
-============================================================
-  [2] CONFIG
-============================================================
-]]
-
 local Config = {
     Combat = {
         AutoAttack     = false,
@@ -53,6 +47,9 @@ local Config = {
         SelectedPoint = nil,
         SmoothSteps   = 10,
         OffsetY       = 5,
+    },
+    Config = {
+        AutoSave = false,
     },
 }
 

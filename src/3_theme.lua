@@ -20,12 +20,12 @@ local Theme = {
         stroke   = Color3.fromRGB(45, 45, 55),
     },
     Icons = {
-        combat   = "rbxassetid://99199363807265",     -- sword
-        visual   = "rbxassetid://127234874352422",    -- eye
-        settings = "rbxassetid://106205298246017",    -- gear
-        config   = "rbxassetid://112330254035751",    -- config (BARU)
-        search   = "rbxassetid://72296609649861",     -- search
-        logo     = "rbxassetid://136526785382643",     -- sthain
+        combat   = "rbxassetid://99199363807265",
+        visual   = "rbxassetid://127234874352422",
+        settings = "rbxassetid://106205298246017",
+        config   = "rbxassetid://112330254035751",
+        search   = "rbxassetid://72296609649861",
+        logo     = "rbxassetid://72211324640441",   -- BARU
     },
     Font = {
         bold = Enum.Font.GothamBold,

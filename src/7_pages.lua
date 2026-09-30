@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [7] PAGES (Combat + Esp + Settings + Config)
+  [7] PAGES (Combat + Esp + Teleport + Settings + Config)
 ============================================================
 ]]
 
@@ -103,15 +103,17 @@ local function makeTab(iconId, name)
     table.insert(tabs, {btn = btn, icon = ic, text = tx, bar = acc, name = name})
 end
 
--- Bikin 4 halaman
+-- Bikin 5 halaman
 createPage("Combat")
 createPage("Esp")
+createPage("Teleport")
 createPage("Settings")
 createPage("Config")
 
--- Bikin 4 tab sidebar
+-- Bikin 5 tab sidebar
 makeTab(I.combat, "Combat")
 makeTab(I.visual, "Esp")
+makeTab(I.teleport, "Teleport")
 makeTab(I.settings, "Settings")
 makeTab(I.config, "Config")
 
@@ -152,11 +154,61 @@ S.Comp.makeToggle(espSetting, "Esp Health", VV.ESPHealth, function(v) VV.ESPHeal
 S.Comp.makeToggle(espSetting, "Esp Name", VV.ESPName, function(v) VV.ESPName = v end)
 
 -- ============================================================
+-- TAB TELEPORT
+-- ============================================================
+local TT = S.Config.Teleport
+
+local tpSetting = S.Comp.makeSection(pages["Teleport"], "Teleport Setting", true)
+S.Comp.makeToggle(tpSetting, "Enable Teleport", TT.Enabled, function(v) TT.Enabled = v end)
+S.Comp.makeInput(tpSetting, "Smooth Steps", TT.SmoothSteps, function(v) TT.SmoothSteps = v end)
+S.Comp.makeInput(tpSetting, "Offset Y", TT.OffsetY, function(v) TT.OffsetY = v end)
+
+local tpCapture = S.Comp.makeSection(pages["Teleport"], "Capture Point", true)
+S.Comp.makeButton(tpCapture, "TP to Nearest Capture", function()
+    _G.STHAIN.TeleportToNearestCapture()
+end)
+S.Comp.makeButton(tpCapture, "TP to Base", function()
+    _G.STHAIN.TeleportToBase()
+end)
+S.Comp.makeButton(tpCapture, "TP to Point A", function()
+    _G.STHAIN.TeleportToPointA()
+end)
+S.Comp.makeButton(tpCapture, "TP to Point B", function()
+    _G.STHAIN.TeleportToPointB()
+end)
+
+local tpSupply = S.Comp.makeSection(pages["Teleport"], "Supply", true)
+S.Comp.makeButton(tpSupply, "TP to Enemy Supply", function()
+    _G.STHAIN.TeleportToEnemySupply()
+end)
+S.Comp.makeButton(tpSupply, "TP to Own Supply", function()
+    _G.STHAIN.TeleportToOwnSupply()
+end)
+
+local tpPlayer = S.Comp.makeSection(pages["Teleport"], "Player", false)
+S.Comp.makeButton(tpPlayer, "TP to Nearest Enemy", function()
+    _G.STHAIN.TeleportToNearestEnemy()
+end)
+S.Comp.makeButton(tpPlayer, "TP to Teammate", function()
+    _G.STHAIN.TeleportToTeammate()
+end)
+
+local tpMisc = S.Comp.makeSection(pages["Teleport"], "Misc", false)
+S.Comp.makeButton(tpMisc, "Scan Locations", function()
+    local results = _G.STHAIN.TeleportScan()
+    print("=== TELEPORT SCAN ===")
+    print("Captures:", #results.captures)
+    print("Supplies:", #results.supplies)
+    for i, s in ipairs(results.supplies) do
+        print("  " .. i .. ". " .. s.name)
+    end
+end)
+
+-- ============================================================
 -- TAB SETTINGS
 -- ============================================================
 local MM = S.Config.Movement
 local XX = S.Config.Misc
-local TT = S.Config.Teleport
 
 local utilityContent, updateUtility = S.Comp.makeSection(pages["Settings"], "Player Utility", true)
 S.Comp.makeInput(utilityContent, "Speed Value", MM.WalkSpeed, function(v) MM.WalkSpeed = v end)
@@ -207,27 +259,6 @@ S.Comp.makeButton(serverContent, "Server Hop (Find Small Server)", function()
     end)
 end)
 task.spawn(function() task.wait(0.1) updateServer() end)
-
-local tpContent, updateTP = S.Comp.makeSection(pages["Settings"], "Teleport", false)
-S.Comp.makeToggle(tpContent, "Enable Teleport", TT.Enabled, function(v) TT.Enabled = v end)
-S.Comp.makeInput(tpContent, "Smooth Steps", TT.SmoothSteps, function(v) TT.SmoothSteps = v end)
-S.Comp.makeInput(tpContent, "Offset Y", TT.OffsetY, function(v) TT.OffsetY = v end)
-S.Comp.makeButton(tpContent, "Scan Locations", function()
-    local results = _G.STHAIN.TeleportScan()
-    print("=== TELEPORT SCAN ===")
-    print("Captures:", #results.captures)
-    print("Supplies:", #results.supplies)
-    for i, s in ipairs(results.supplies) do
-        print("  " .. i .. ". " .. s.name .. " @ " .. tostring(s.pos))
-    end
-end)
-S.Comp.makeButton(tpContent, "TP to Nearest Capture", function()
-    _G.STHAIN.TeleportToNearestCapture()
-end)
-S.Comp.makeButton(tpContent, "TP to Enemy Supply", function()
-    _G.STHAIN.TeleportToEnemySupply()
-end)
-task.spawn(function() task.wait(0.1) updateTP() end)
 
 -- ============================================================
 -- TAB CONFIG

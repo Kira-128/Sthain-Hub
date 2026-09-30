@@ -51,9 +51,9 @@ local Config = {
     Teleport = {
         Enabled        = false,
         SelectedPoint  = nil,
+        SelectedSupply = nil,
         SmoothSteps    = 10,
         OffsetY        = 5,
-        SelectedSupply = nil,
     },
     Config = {
         AutoSave = true,

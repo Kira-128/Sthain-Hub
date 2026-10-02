@@ -1,10 +1,15 @@
 --[[
 ============================================================
-  [8] LOGIC LOOPS (FINAL DEBUGGED)
+  [8] LOGIC LOOPS (FINAL FIX - ALL MAP SUPPORT)
 ============================================================
 ]]
 
 local S = _G.STHAIN
+if not S then
+    warn("[STHAIN] _G.STHAIN nil! Stop logic.")
+    return
+end
+
 local Config = S.Config
 local Utils = S.Utils
 local Run = S.Services.Run
@@ -12,6 +17,8 @@ local UIS = S.Services.UIS
 local Lighting = S.Services.Lighting
 local Cam = S.Cam
 local LP = S.LP
+
+print("[STHAIN] Modules OK, starting logic...")
 
 -- ============================================================
 -- STATE TRACKERS
@@ -25,17 +32,20 @@ local State = {
     SelfHitbox = false,
     EnemyHitbox = false,
     ESP = false,
-    KillAura = false,
     TargetLock = false,
-    AutoHeal = false,
-    AutoTP = false,
 }
+
+-- ============================================================
+-- WAIT CHARACTER
+-- ============================================================
+task.spawn(function()
+    repeat task.wait(0.1) until LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    print("[STHAIN] Character loaded!")
+end)
 
 -- ============================================================
 -- MOVEMENT
 -- ============================================================
-task.wait(2)
-
 Run.RenderStepped:Connect(function()
     local hum = Utils.getHum()
     if hum then
@@ -52,21 +62,18 @@ Run.RenderStepped:Connect(function()
 end)
 
 -- ============================================================
--- NOCLIP (FIX - Heartbeat + restore)
+-- NOCLIP
 -- ============================================================
 local lastSafePos = nil
-local noclipParts = {}
+local noclipOriginal = {}
 
--- Cleanup noclip
 local function cleanupNoclip()
-    local char = Utils.getChar()
-    if not char then return end
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and part:GetAttribute("CA_Noclip") then
-            part.CanCollide = true
-            part:SetAttribute("CA_Noclip", nil)
+    for part, origVal in pairs(noclipOriginal) do
+        if part and part.Parent then
+            pcall(function() part.CanCollide = origVal end)
         end
     end
+    noclipOriginal = {}
 end
 
 Run.Heartbeat:Connect(function()
@@ -85,8 +92,10 @@ Run.Heartbeat:Connect(function()
 
         for _, part in pairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
+                if noclipOriginal[part] == nil then
+                    noclipOriginal[part] = part.CanCollide
+                end
                 part.CanCollide = false
-                part:SetAttribute("CA_Noclip", true)
             end
         end
 
@@ -128,8 +137,8 @@ task.spawn(function()
         if Config.Movement.InfJump then
             local hum = Utils.getHum()
             if hum then
-                local state = hum:GetState()
-                if state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Jumping then
+                local st = hum:GetState()
+                if st == Enum.HumanoidStateType.Freefall or st == Enum.HumanoidStateType.Jumping then
                     pcall(function()
                         hum:ChangeState(Enum.HumanoidStateType.Jumping)
                     end)
@@ -188,10 +197,9 @@ task.spawn(function()
         if Config.Combat.KillAura then
             local char = Utils.getChar()
             local hrp = Utils.getHRP()
-            local hum = Utils.getHum()
-            if not (char and hrp and hum) then continue end
+            if not (char and hrp) then continue end
 
-            local nearest, nearestDist, nearestModel = nil, Config.Combat.KillAuraRange, nil
+            local nearest, nearestDist = nil, Config.Combat.KillAuraRange
             for _, model in pairs(workspace:GetChildren()) do
                 if model == char then continue end
                 if not model:IsA("Model") then continue end
@@ -204,33 +212,21 @@ task.spawn(function()
                 if dist < 5 then continue end
                 if dist < nearestDist then
                     nearest = thrp
-                    nearestModel = model
                     nearestDist = dist
                 end
             end
 
-            if nearest and nearestModel then
-                local rayParams = RaycastParams.new()
-                rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                rayParams.FilterDescendantsInstances = {char}
-                local ray = workspace:Raycast(hrp.Position, (nearest.Position - hrp.Position), rayParams)
-                local hasLOS = true
-                if ray and ray.Instance then
-                    local hitModel = ray.Instance:FindFirstAncestorOfClass("Model")
-                    if hitModel ~= nearestModel then hasLOS = false end
+            if nearest then
+                local myLook = hrp.CFrame.LookVector
+                local toEnemy = (nearest.Position - hrp.Position).Unit
+                if myLook:Dot(toEnemy) < 0.7 then
+                    local targetCF = CFrame.new(hrp.Position, Vector3.new(nearest.Position.X, hrp.Position.Y, nearest.Position.Z))
+                    hrp.CFrame = hrp.CFrame:Lerp(targetCF, 0.5)
                 end
-
-                if hasLOS then
-                    local myLook = hrp.CFrame.LookVector
-                    local toEnemy = (nearest.Position - hrp.Position).Unit
-                    if myLook:Dot(toEnemy) < 0.7 then
-                        local targetCF = CFrame.new(hrp.Position, Vector3.new(nearest.Position.X, hrp.Position.Y, nearest.Position.Z))
-                        hrp.CFrame = hrp.CFrame:Lerp(targetCF, 0.5)
-                    end
-                    if tick() - killAuraCD >= 0.3 then
-                        killAuraCD = tick()
-                        Utils.sendKey(Enum.KeyCode.V, 0.05)
-                    end
+                
+                if tick() - killAuraCD >= 0.3 then
+                    killAuraCD = tick()
+                    Utils.sendKey(Enum.KeyCode.V, 0.05)
                 end
             end
         end
@@ -249,7 +245,6 @@ task.spawn(function()
             if not (char and hrp) then continue end
 
             local nearest, nearestDist = nil, 150
-
             for _, model in pairs(workspace:GetChildren()) do
                 if model == char then continue end
                 if not model:IsA("Model") then continue end
@@ -260,7 +255,6 @@ task.spawn(function()
 
                 local dist = (thrp.Position - hrp.Position).Magnitude
                 if dist < 5 then continue end
-
                 if dist < nearestDist then
                     nearest = thrp
                     nearestDist = dist
@@ -274,7 +268,7 @@ task.spawn(function()
             State.TargetLock = true
         elseif State.TargetLock then
             if Cam.CameraType == Enum.CameraType.Scriptable then
-                Cam.CameraType = origCamType
+                Cam.CameraType = Enum.CameraType.Custom
             end
             State.TargetLock = false
         end
@@ -291,7 +285,7 @@ task.spawn(function()
             local hum = Utils.getHum()
             if hum and hum.Health > 0 then
                 local pct = (hum.Health / hum.MaxHealth) * 100
-                if pct <= Config.Combat.HealThreshold and tick() - healCD >= 1.5 then
+                if pct <= Config.Combat.HealThreshold and tick() - healCD >= 2 then
                     healCD = tick()
                     Utils.sendKey(Enum.KeyCode.H, 0.05)
                 end
@@ -512,8 +506,18 @@ local function startFly()
         if not Config.Movement.Fly then return end
         local hum = Utils.getHum()
         if not (hum and flyLV and flyAO) then return end
+        
         flyAO.CFrame = Cam.CFrame
-        flyLV.VectorVelocity = hum.MoveDirection * Config.Movement.FlySpeed
+        
+        local camCF = Cam.CFrame
+        local moveDir = hum.MoveDirection
+        local finalDir = Vector3.zero
+        
+        if moveDir.Magnitude > 0.1 then
+            finalDir = camCF.LookVector * moveDir.Z + camCF.RightVector * moveDir.X
+        end
+        
+        flyLV.VectorVelocity = finalDir * Config.Movement.FlySpeed
     end)
 end
 
@@ -530,7 +534,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- FULLBRIGHT / NO FOG (FIX - restore)
+-- FULLBRIGHT / NO FOG
 -- ============================================================
 local savedLighting = {
     Brightness = nil,
@@ -542,7 +546,6 @@ local savedLighting = {
 
 task.spawn(function()
     while task.wait(0.5) do
-        -- FULLBRIGHT
         if Config.Visual.Fullbright then
             if savedLighting.Brightness == nil then
                 savedLighting.Brightness = Lighting.Brightness
@@ -565,7 +568,6 @@ task.spawn(function()
             State.Fullbright = false
         end
 
-        -- NO FOG
         if Config.Visual.NoFog then
             if savedLighting.FogEnd == nil then
                 savedLighting.FogEnd = Lighting.FogEnd
@@ -627,7 +629,6 @@ task.spawn(function()
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then continue end
 
-        -- SELF
         if Config.Visual.SelfHitbox then
             if not origHRPSize then origHRPSize = hrp.Size end
             pcall(function() hrp.Size = Vector3.new(Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize) end)
@@ -638,8 +639,8 @@ task.spawn(function()
                 box.Size = Vector3.new(Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize)
                 box.Transparency = 0.7
                 box.CanCollide = false
-                box.CanQuery = true
-                box.CanTouch = true
+                box.CanQuery = false
+                box.CanTouch = false
                 box.Massless = true
                 box.CFrame = hrp.CFrame
                 box.Parent = char
@@ -659,7 +660,6 @@ task.spawn(function()
             State.SelfHitbox = false
         end
 
-        -- ENEMY
         if Config.Visual.EnemyHitbox then
             for _, model in pairs(workspace:GetChildren()) do
                 if model == char then continue end
@@ -674,8 +674,8 @@ task.spawn(function()
                         box.Size = Vector3.new(Config.Visual.EnemyHitboxSize, Config.Visual.EnemyHitboxSize, Config.Visual.EnemyHitboxSize)
                         box.Transparency = 0.8
                         box.CanCollide = false
-                        box.CanQuery = true
-                        box.CanTouch = true
+                        box.CanQuery = false
+                        box.CanTouch = false
                         box.Massless = true
                         box.CFrame = thrp.CFrame
                         box.Parent = model
@@ -712,7 +712,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO TP (ke musuh terdekat)
+-- AUTO TP
 -- ============================================================
 task.spawn(function()
     while task.wait(0.5) do
@@ -743,54 +743,82 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- TELEPORT SYSTEM (FINAL)
+-- TELEPORT SYSTEM (FIX - DINAMIS)
 -- ============================================================
 
-function _G.STHAIN.TeleportScan()
-    local results = {
-        supplies = {},
-        captures = {},
-    }
-    
+-- Cari map folder (dinamis, ga hardcode Plains)
+local function getMapFolder()
     local activeMap = workspace:FindFirstChild("ActiveMap")
-    if activeMap then
-        local plains = activeMap:FindFirstChild("Plains")
-        if plains then
-            local interactable = plains:FindFirstChild("Interactable")
-            if interactable then
-                local suppliesFolder = interactable:FindFirstChild("Supplies")
-                if suppliesFolder then
-                    for _, obj in pairs(suppliesFolder:GetChildren()) do
-                        if obj:IsA("Model") then
-                            local n = string.lower(obj.Name)
-                            if n:find("attacker") or n:find("defender") then
-                                local teamType = n:find("attacker") and "attacker" or "defender"
-                                local capturePart = obj:FindFirstChild("CapturePoint")
-                                table.insert(results.supplies, {
-                                    name = obj.Name,
-                                    instance = obj,
-                                    capturePart = capturePart,
-                                    team = teamType
-                                })
-                            end
+    if not activeMap then return nil end
+    
+    for _, child in pairs(activeMap:GetChildren()) do
+        if child:IsA("Folder") or child:IsA("Model") then
+            if child:FindFirstChild("Interactable") then
+                return child
+            end
+        end
+    end
+    return nil
+end
+
+function _G.STHAIN.TeleportScan()
+    local results = { supplies = {}, captures = {} }
+    
+    local mapFolder = getMapFolder()
+    if not mapFolder then return results end
+    
+    local interactable = mapFolder:FindFirstChild("Interactable")
+    if not interactable then return results end
+    
+    -- === SUPPLY ===
+    local suppliesFolder = interactable:FindFirstChild("Supplies")
+    if suppliesFolder then
+        for _, obj in pairs(suppliesFolder:GetChildren()) do
+            if obj:IsA("Model") then
+                local n = string.lower(obj.Name)
+                local teamType = "unknown"
+                if n:find("attacker") then teamType = "attacker"
+                elseif n:find("defender") then teamType = "defender" end
+                
+                local capturePart = obj:FindFirstChild("CapturePoint")
+                
+                -- Cek status supply (udah di-capture atau belum)
+                local isCaptured = false
+                -- Cek attribute
+                for k, v in pairs(obj:GetAttributes()) do
+                    local key = string.lower(k)
+                    local val = string.lower(tostring(v))
+                    if (key:find("owner") or key:find("team") or key:find("capture")) then
+                        if val:find("attacker") or val:find("defender") then
+                            -- Ada owner, cek apakah sama dengan team lo
+                            -- (nanti di fungsi TP)
                         end
                     end
                 end
                 
-                local pointsFolder = interactable:FindFirstChild("Points")
-                if pointsFolder then
-                    for _, obj in pairs(pointsFolder:GetChildren()) do
-                        if obj:IsA("Model") then
-                            local capturePart = obj:FindFirstChild("CapturePoint")
-                            if capturePart then
-                                table.insert(results.captures, {
-                                    name = obj.Name,
-                                    instance = capturePart,
-                                    model = obj
-                                })
-                            end
-                        end
-                    end
+                table.insert(results.supplies, {
+                    name = obj.Name,
+                    instance = obj,
+                    capturePart = capturePart,
+                    team = teamType,
+                    attributes = obj:GetAttributes(),
+                })
+            end
+        end
+    end
+    
+    -- === CAPTURE (CUMA DI POINTS) ===
+    local pointsFolder = interactable:FindFirstChild("Points")
+    if pointsFolder then
+        for _, obj in pairs(pointsFolder:GetChildren()) do
+            if obj:IsA("Model") then
+                local capturePart = obj:FindFirstChild("CapturePoint")
+                if capturePart then
+                    table.insert(results.captures, {
+                        name = obj.Name,
+                        instance = capturePart,
+                        model = obj,
+                    })
                 end
             end
         end
@@ -817,8 +845,8 @@ function _G.STHAIN.GetMyTeam()
     
     for k, v in pairs(Plr:GetAttributes()) do
         local val = string.lower(tostring(v))
-        if val:find("attacker") then return "attacker" end
-        if val:find("defender") then return "defender" end
+        if val == "attackers" or val == "attacker" then return "attacker" end
+        if val == "defenders" or val == "defender" then return "defender" end
     end
     
     return "unknown"
@@ -829,27 +857,18 @@ function _G.STHAIN.TeleportTo(part)
     if not char then return false end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
+    if not part then return false end
     
     local targetPos
     if typeof(part) == "Vector3" then
         targetPos = part
     else
+        if not part.Parent then return false end
         targetPos = part.Position
     end
     
-    local finalPos = targetPos + Vector3.new(0, Config.Teleport.OffsetY, 0)
-    local startPos = hrp.Position
-    local steps = Config.Teleport.SmoothSteps or 10
-    
-    task.spawn(function()
-        for i = 1, steps do
-            local alpha = i / steps
-            pcall(function()
-                hrp.CFrame = CFrame.new(startPos:Lerp(finalPos, alpha))
-            end)
-            task.wait(0.03)
-        end
-    end)
+    local offsetY = (Config.Teleport and Config.Teleport.OffsetY) or 5
+    pcall(function() hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, offsetY, 0)) end)
     return true
 end
 
@@ -866,18 +885,33 @@ function _G.STHAIN.TeleportToEnemySupply()
         return false
     end
     
-    local enemyKeyword = (myTeam == "attacker") and "defender" or "attacker"
+    local enemyTeam = (myTeam == "attacker") and "defender" or "attacker"
     
     for _, supply in ipairs(results.supplies) do
-        if supply.team == enemyKeyword then
-            local targetPart = supply.capturePart or supply.instance
-            _G.STHAIN.TeleportTo(targetPart)
-            print("[TP] TP to:", supply.name, "| Team:", myTeam)
-            return true
+        if supply.team == enemyTeam then
+            -- Cek apakah supply udah di-capture (jadi milik lo)
+            local captured = false
+            for k, v in pairs(supply.attributes or {}) do
+                local key = string.lower(k)
+                local val = string.lower(tostring(v))
+                if key:find("owner") or key:find("team") then
+                    if val:find(myTeam) then
+                        captured = true
+                        break
+                    end
+                end
+            end
+            
+            if not captured then
+                local targetPart = supply.capturePart or supply.instance
+                _G.STHAIN.TeleportTo(targetPart)
+                print("[TP] TP to:", supply.name)
+                return true
+            end
         end
     end
     
-    warn("[TP] Supply musuh ga ketemu.")
+    warn("[TP] Supply musuh ga ketemu (mungkin udah di-capture).")
     return false
 end
 
@@ -890,7 +924,6 @@ function _G.STHAIN.TeleportToOwnSupply()
         if supply.team == myTeam then
             local targetPart = supply.capturePart or supply.instance
             _G.STHAIN.TeleportTo(targetPart)
-            print("[TP] TP to own supply:", supply.name)
             return true
         end
     end
@@ -903,13 +936,19 @@ function _G.STHAIN.TeleportToNearestCapture()
     if not (char and hrp) then return false end
     
     local results = _G.STHAIN.TeleportScan()
-    local nearest, nearestDist = nil, math.huge
+    if #results.captures == 0 then
+        warn("[TP] Ga ada capture point.")
+        return false
+    end
     
+    local nearest, nearestDist = nil, math.huge
     for _, cap in ipairs(results.captures) do
-        local dist = (cap.instance.Position - hrp.Position).Magnitude
-        if dist < nearestDist then
-            nearest = cap
-            nearestDist = dist
+        if cap.instance and cap.instance.Parent then
+            local dist = (cap.instance.Position - hrp.Position).Magnitude
+            if dist < nearestDist then
+                nearest = cap
+                nearestDist = dist
+            end
         end
     end
     
@@ -923,6 +962,8 @@ end
 
 function _G.STHAIN.TeleportToBase()
     local results = _G.STHAIN.TeleportScan()
+    
+    -- Cari Base
     for _, cap in ipairs(results.captures) do
         if string.lower(cap.name) == "base" then
             _G.STHAIN.TeleportTo(cap.instance)
@@ -930,6 +971,26 @@ function _G.STHAIN.TeleportToBase()
             return true
         end
     end
+    
+    -- Fallback: PointA
+    for _, cap in ipairs(results.captures) do
+        if string.lower(cap.name) == "pointa" then
+            _G.STHAIN.TeleportTo(cap.instance)
+            print("[TP] Base ga ada, TP ke Point A")
+            return true
+        end
+    end
+    
+    -- Fallback: PointB
+    for _, cap in ipairs(results.captures) do
+        if string.lower(cap.name) == "pointb" then
+            _G.STHAIN.TeleportTo(cap.instance)
+            print("[TP] Base ga ada, TP ke Point B")
+            return true
+        end
+    end
+    
+    warn("[TP] Base / Point ga ketemu.")
     return false
 end
 
@@ -942,6 +1003,7 @@ function _G.STHAIN.TeleportToPointA()
             return true
         end
     end
+    warn("[TP] Point A ga ketemu.")
     return false
 end
 
@@ -954,6 +1016,7 @@ function _G.STHAIN.TeleportToPointB()
             return true
         end
     end
+    warn("[TP] Point B ga ketemu.")
     return false
 end
 
@@ -981,7 +1044,6 @@ function _G.STHAIN.TeleportToNearestEnemy()
     
     if nearest then
         _G.STHAIN.TeleportTo(nearest)
-        print("[TP] TP to nearest enemy")
         return true
     end
     return false
@@ -1021,14 +1083,13 @@ function _G.STHAIN.TeleportToTeammate()
     
     if nearest then
         _G.STHAIN.TeleportTo(nearest)
-        print("[TP] TP to teammate")
         return true
     end
     return false
 end
 
 -- ============================================================
--- CONFIG SAVE/LOAD
+-- CONFIG SAVE / LOAD
 -- ============================================================
 
 function _G.STHAIN.SaveConfig()
@@ -1078,17 +1139,23 @@ function _G.STHAIN.DeleteConfig()
     return true
 end
 
+-- Auto Save
 task.spawn(function()
-    while task.wait(30) do
-        if _G.STHAIN.Config.Config.AutoSave then
-            _G.STHAIN.SaveConfig()
+    while task.wait(60) do
+        if _G.STHAIN.Config and _G.STHAIN.Config.Config and _G.STHAIN.Config.Config.AutoSave then
+            if _G.STHAIN.SaveConfig then
+                _G.STHAIN.SaveConfig()
+            end
         end
     end
 end)
 
+-- Auto Load
 task.spawn(function()
-    task.wait(2)
-    _G.STHAIN.LoadConfig()
+    task.wait(3)
+    if _G.STHAIN.LoadConfig then
+        _G.STHAIN.LoadConfig()
+    end
 end)
 
 -- ============================================================
@@ -1109,4 +1176,4 @@ LP.CharacterAdded:Connect(function(char)
     print("[STHAIN] Character respawned, features reset")
 end)
 
-print("[STHAIN] Logic loops loaded - FINAL DEBUGGED")
+print("[STHAIN] Logic loops loaded - ALL MAP SUPPORT")

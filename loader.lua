@@ -1,12 +1,12 @@
 --[[
 ============================================================
   STHAIN HUB - LOADER
-  Author  : Cabu
-  Version : 1.0
+  Author  : CABU
+  Version : 1.3
 ============================================================
 ]]
 
-local BASE = "https://raw.githubusercontent.com/Kira-128/Sthain-Hub/main/src/"
+local BASE = "https://sthain-hub.dzulfadhil33333.workers.dev/src/"
 
 local Modules = {
     "1_services",

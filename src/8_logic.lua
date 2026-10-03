@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [8] LOGIC LOOPS (FINAL FIX - ALL MAP SUPPORT)
+  [8] LOGIC LOOPS (FULL FIX)
 ============================================================
 ]]
 
@@ -44,25 +44,27 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- MOVEMENT
+-- MOVEMENT (REWRITE)
 -- ============================================================
 Run.RenderStepped:Connect(function()
     local hum = Utils.getHum()
-    if hum then
-        if hum.WalkSpeed ~= Config.Movement.WalkSpeed then
-            hum.WalkSpeed = Config.Movement.WalkSpeed
-        end
-        if hum.HipHeight ~= Config.Movement.HipHeight then
-            hum.HipHeight = Config.Movement.HipHeight
-        end
-        if hum.JumpPower ~= Config.Movement.JumpPower then
-            hum.JumpPower = Config.Movement.JumpPower
-        end
+    if not hum then return end
+    
+    if hum.WalkSpeed ~= Config.Movement.WalkSpeed then
+        hum.WalkSpeed = Config.Movement.WalkSpeed
+    end
+    if hum.HipHeight ~= Config.Movement.HipHeight then
+        hum.HipHeight = Config.Movement.HipHeight
+    end
+    if hum.JumpPower ~= Config.Movement.JumpPower then
+        hum.JumpPower = Config.Movement.JumpPower
     end
 end)
 
+print("[STHAIN] Movement loop started")
+
 -- ============================================================
--- NOCLIP
+-- NOCLIP (REWRITE)
 -- ============================================================
 local lastSafePos = nil
 local noclipOriginal = {}
@@ -128,6 +130,8 @@ task.spawn(function()
         end
     end
 end)
+
+print("[STHAIN] Noclip loop started")
 
 -- ============================================================
 -- INFINITE JUMP
@@ -200,7 +204,7 @@ task.spawn(function()
             if not (char and hrp) then continue end
 
             local nearest, nearestDist = nil, Config.Combat.KillAuraRange
-            for _, model in pairs(workspace:GetChildren()) do
+            for _, model in pairs(workspace:GetDescendants()) do
                 if model == char then continue end
                 if not model:IsA("Model") then continue end
                 local mhum = model:FindFirstChildOfClass("Humanoid")
@@ -245,7 +249,7 @@ task.spawn(function()
             if not (char and hrp) then continue end
 
             local nearest, nearestDist = nil, 150
-            for _, model in pairs(workspace:GetChildren()) do
+            for _, model in pairs(workspace:GetDescendants()) do
                 if model == char then continue end
                 if not model:IsA("Model") then continue end
                 local hum = model:FindFirstChildOfClass("Humanoid")
@@ -354,9 +358,20 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ESP
+-- ESP (REWRITE - PASTI MUNCUL)
 -- ============================================================
 local espCache = {}
+local espFolder = nil
+
+-- Bikin folder ESP
+task.spawn(function()
+    task.wait(1)
+    if S.GUI and S.GUI.Screen then
+        espFolder = Instance.new("Folder")
+        espFolder.Name = "ESP_Folder"
+        espFolder.Parent = S.GUI.Screen
+    end
+end)
 
 local function cleanupESP()
     for _, objs in pairs(espCache) do
@@ -367,8 +382,79 @@ local function cleanupESP()
     espCache = {}
 end
 
+local function createESP(model)
+    local hrp = model:FindFirstChild("HumanoidRootPart")
+    local hum = model:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return nil end
+
+    local objs = {}
+    local parent = espFolder or S.GUI.Screen
+
+    if Config.Visual.Chams then
+        local hl = Instance.new("Highlight")
+        hl.Name = "ESP_HL"
+        hl.FillColor = Color3.fromRGB(255, 0, 0)
+        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+        hl.FillTransparency = 0.5
+        hl.Adornee = model
+        hl.Parent = parent
+        table.insert(objs, hl)
+    end
+
+    if Config.Visual.ESPName then
+        local bb = Instance.new("BillboardGui")
+        bb.Name = "ESP_Name"
+        bb.Size = UDim2.new(0, 150, 0, 25)
+        bb.StudsOffset = Vector3.new(0, 3.5, 0)
+        bb.AlwaysOnTop = true
+        bb.Adornee = hrp
+        bb.Parent = parent
+
+        local nameLbl = Instance.new("TextLabel")
+        nameLbl.Size = UDim2.new(1, 0, 1, 0)
+        nameLbl.Text = model.Name
+        nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+        nameLbl.TextStrokeTransparency = 0
+        nameLbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        nameLbl.TextSize = 14
+        nameLbl.Font = Enum.Font.GothamBold
+        nameLbl.BackgroundTransparency = 1
+        nameLbl.Parent = bb
+        table.insert(objs, bb)
+    end
+
+    if Config.Visual.ESPHealth then
+        local hb = Instance.new("BillboardGui")
+        hb.Name = "ESP_Health"
+        hb.Size = UDim2.new(0, 80, 0, 8)
+        hb.StudsOffset = Vector3.new(0, 2.5, 0)
+        hb.AlwaysOnTop = true
+        hb.Adornee = hrp
+        hb.Parent = parent
+
+        local bg = Instance.new("Frame")
+        bg.Size = UDim2.new(1, 0, 1, 0)
+        bg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        bg.BorderSizePixel = 0
+        bg.Parent = hb
+        Instance.new("UICorner", bg).CornerRadius = UDim.new(1, 0)
+
+        local fill = Instance.new("Frame")
+        fill.Name = "Fill"
+        fill.Size = UDim2.new(1, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(80, 220, 130)
+        fill.BorderSizePixel = 0
+        fill.Parent = bg
+        Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+        table.insert(objs, hb)
+    end
+
+    return objs
+end
+
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(0.5) do
         local active = Config.Visual.ESPBox or Config.Visual.ESPTracer or Config.Visual.ESPHealth or Config.Visual.ESPName or Config.Visual.Chams
 
         if not active then
@@ -379,86 +465,58 @@ task.spawn(function()
         else
             State.ESP = true
             local char = Utils.getChar()
-            for _, model in pairs(workspace:GetChildren()) do
+            if not char then continue end
+
+            -- Cleanup yang ilang
+            for model, objs in pairs(espCache) do
+                if not model.Parent then
+                    for _, obj in pairs(objs) do
+                        pcall(function() obj:Destroy() end)
+                    end
+                    espCache[model] = nil
+                end
+            end
+
+            -- Scan enemy
+            for _, model in pairs(workspace:GetDescendants()) do
                 if model == char then continue end
                 if not model:IsA("Model") then continue end
+                
                 local hum = model:FindFirstChildOfClass("Humanoid")
                 if not hum or hum.Health <= 0 then continue end
+                
                 local hrp = model:FindFirstChild("HumanoidRootPart")
                 if not hrp then continue end
 
-                if not espCache[model] then
-                    local objs = {}
+                if espCache[model] then continue end
 
-                    if Config.Visual.Chams then
-                        local hl = Instance.new("Highlight")
-                        hl.Name = "CA_ESP"
-                        hl.FillColor = Color3.fromRGB(255, 0, 0)
-                        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-                        hl.Adornee = model
-                        hl.Parent = S.GUI.Screen
-                        table.insert(objs, hl)
-                    end
+                -- Skip folder sampah
+                local parentName = model.Parent and model.Parent.Name or ""
+                if parentName == "Mounts" then continue end
+                if parentName == "LocalGlobalLeaderboardDisplays" then continue end
 
-                    if Config.Visual.ESPName then
-                        local bb = Instance.new("BillboardGui")
-                        bb.Name = "CA_ESP_Name"
-                        bb.Size = UDim2.new(0, 120, 0, 24)
-                        bb.StudsOffset = Vector3.new(0, 3, 0)
-                        bb.AlwaysOnTop = true
-                        bb.Adornee = hrp
-                        bb.Parent = S.GUI.Screen
-                        local nameLbl = Instance.new("TextLabel")
-                        nameLbl.Size = UDim2.new(1, 0, 1, 0)
-                        nameLbl.Text = model.Name
-                        nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        nameLbl.TextStrokeTransparency = 0
-                        nameLbl.TextSize = 14
-                        nameLbl.Font = Enum.Font.GothamBold
-                        nameLbl.BackgroundTransparency = 1
-                        nameLbl.Parent = bb
-                        table.insert(objs, bb)
-                    end
-
-                    if Config.Visual.ESPHealth then
-                        local hb = Instance.new("BillboardGui")
-                        hb.Name = "CA_ESP_Health"
-                        hb.Size = UDim2.new(0, 60, 0, 6)
-                        hb.StudsOffset = Vector3.new(0, 2.3, 0)
-                        hb.AlwaysOnTop = true
-                        hb.Adornee = hrp
-                        hb.Parent = S.GUI.Screen
-                        local bg = Instance.new("Frame")
-                        bg.Size = UDim2.new(1, 0, 1, 0)
-                        bg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                        bg.BorderSizePixel = 0
-                        bg.Parent = hb
-                        local fill = Instance.new("Frame")
-                        fill.Name = "Fill"
-                        fill.Size = UDim2.new(1, 0, 1, 0)
-                        fill.BackgroundColor3 = Color3.fromRGB(80, 220, 130)
-                        fill.BorderSizePixel = 0
-                        fill.Parent = bg
-                        table.insert(objs, hb)
-                    end
-
+                local objs = createESP(model)
+                if objs then
                     espCache[model] = objs
                 end
             end
 
+            -- Update Health
             for model, objs in pairs(espCache) do
-                if not model.Parent then
-                    for _, obj in pairs(objs) do pcall(function() obj:Destroy() end) end
-                    espCache[model] = nil
-                else
-                    local hum = model:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        for _, obj in pairs(objs) do
-                            if obj:IsA("BillboardGui") then
-                                local fill = obj:FindFirstChild("Fill", true)
-                                if fill then
-                                    local pct = hum.Health / hum.MaxHealth
-                                    fill.Size = UDim2.new(pct, 0, 1, 0)
+                local hum = model:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    for _, obj in pairs(objs) do
+                        if obj:IsA("BillboardGui") and obj.Name == "ESP_Health" then
+                            local fill = obj:FindFirstChild("Fill", true)
+                            if fill then
+                                local pct = hum.Health / hum.MaxHealth
+                                fill.Size = UDim2.new(pct, 0, 1, 0)
+                                if pct > 0.5 then
+                                    fill.BackgroundColor3 = Color3.fromRGB(80, 220, 130)
+                                elseif pct > 0.25 then
+                                    fill.BackgroundColor3 = Color3.fromRGB(255, 200, 60)
+                                else
+                                    fill.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
                                 end
                             end
                         end
@@ -469,8 +527,10 @@ task.spawn(function()
     end
 end)
 
+print("[STHAIN] ESP loop started")
+
 -- ============================================================
--- FLY
+-- FLY (REWRITE)
 -- ============================================================
 local flyLV, flyAO, flyConn
 local function stopFly()
@@ -526,12 +586,16 @@ task.spawn(function()
         if Config.Movement.Fly and not State.Fly then
             startFly()
             State.Fly = true
+            print("[STHAIN] Fly ON")
         elseif not Config.Movement.Fly and State.Fly then
             stopFly()
             State.Fly = false
+            print("[STHAIN] Fly OFF")
         end
     end
 end)
+
+print("[STHAIN] Fly loop started")
 
 -- ============================================================
 -- FULLBRIGHT / NO FOG
@@ -661,7 +725,7 @@ task.spawn(function()
         end
 
         if Config.Visual.EnemyHitbox then
-            for _, model in pairs(workspace:GetChildren()) do
+            for _, model in pairs(workspace:GetDescendants()) do
                 if model == char then continue end
                 if not model:IsA("Model") then continue end
                 local hum = model:FindFirstChildOfClass("Humanoid")
@@ -688,7 +752,7 @@ task.spawn(function()
             end
             State.EnemyHitbox = true
         elseif State.EnemyHitbox then
-            for _, model in pairs(workspace:GetChildren()) do
+            for _, model in pairs(workspace:GetDescendants()) do
                 local box = model:FindFirstChild("CA_EnemyHB")
                 if box then box:Destroy() end
             end
@@ -721,7 +785,7 @@ task.spawn(function()
             local hrp = Utils.getHRP()
             if not (char and hrp) then continue end
             local nearest, nearestDist = nil, Config.Misc.AutoTPRange
-            for _, model in pairs(workspace:GetChildren()) do
+            for _, model in pairs(workspace:GetDescendants()) do
                 if model == char then continue end
                 if not model:IsA("Model") then continue end
                 local hum = model:FindFirstChildOfClass("Humanoid")
@@ -743,10 +807,9 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- TELEPORT SYSTEM (FIX - DINAMIS)
+-- TELEPORT SYSTEM
 -- ============================================================
 
--- Cari map folder (dinamis, ga hardcode Plains)
 local function getMapFolder()
     local activeMap = workspace:FindFirstChild("ActiveMap")
     if not activeMap then return nil end
@@ -770,7 +833,6 @@ function _G.STHAIN.TeleportScan()
     local interactable = mapFolder:FindFirstChild("Interactable")
     if not interactable then return results end
     
-    -- === SUPPLY ===
     local suppliesFolder = interactable:FindFirstChild("Supplies")
     if suppliesFolder then
         for _, obj in pairs(suppliesFolder:GetChildren()) do
@@ -780,26 +842,10 @@ function _G.STHAIN.TeleportScan()
                 if n:find("attacker") then teamType = "attacker"
                 elseif n:find("defender") then teamType = "defender" end
                 
-                local capturePart = obj:FindFirstChild("CapturePoint")
-                
-                -- Cek status supply (udah di-capture atau belum)
-                local isCaptured = false
-                -- Cek attribute
-                for k, v in pairs(obj:GetAttributes()) do
-                    local key = string.lower(k)
-                    local val = string.lower(tostring(v))
-                    if (key:find("owner") or key:find("team") or key:find("capture")) then
-                        if val:find("attacker") or val:find("defender") then
-                            -- Ada owner, cek apakah sama dengan team lo
-                            -- (nanti di fungsi TP)
-                        end
-                    end
-                end
-                
                 table.insert(results.supplies, {
                     name = obj.Name,
                     instance = obj,
-                    capturePart = capturePart,
+                    capturePart = obj:FindFirstChild("CapturePoint"),
                     team = teamType,
                     attributes = obj:GetAttributes(),
                 })
@@ -807,7 +853,6 @@ function _G.STHAIN.TeleportScan()
         end
     end
     
-    -- === CAPTURE (CUMA DI POINTS) ===
     local pointsFolder = interactable:FindFirstChild("Points")
     if pointsFolder then
         for _, obj in pairs(pointsFolder:GetChildren()) do
@@ -867,8 +912,21 @@ function _G.STHAIN.TeleportTo(part)
         targetPos = part.Position
     end
     
-    local offsetY = (Config.Teleport and Config.Teleport.OffsetY) or 5
-    pcall(function() hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, offsetY, 0)) end)
+    -- Raycast buat cari permukaan tanah (anti tembus)
+    local rayParams = RaycastParams.new()
+    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+    rayParams.FilterDescendantsInstances = {char}
+    
+    local ray = workspace:Raycast(targetPos + Vector3.new(0, 50, 0), Vector3.new(0, -100, 0), rayParams)
+    local finalPos
+    
+    if ray then
+        finalPos = ray.Position + Vector3.new(0, 5, 0)
+    else
+        finalPos = targetPos + Vector3.new(0, 10, 0)
+    end
+    
+    pcall(function() hrp.CFrame = CFrame.new(finalPos) end)
     return true
 end
 
@@ -889,7 +947,7 @@ function _G.STHAIN.TeleportToEnemySupply()
     
     for _, supply in ipairs(results.supplies) do
         if supply.team == enemyTeam then
-            -- Cek apakah supply udah di-capture (jadi milik lo)
+            -- Cek apakah supply udah di-capture
             local captured = false
             for k, v in pairs(supply.attributes or {}) do
                 local key = string.lower(k)
@@ -907,11 +965,13 @@ function _G.STHAIN.TeleportToEnemySupply()
                 _G.STHAIN.TeleportTo(targetPart)
                 print("[TP] TP to:", supply.name)
                 return true
+            else
+                print("[TP] Skip (udah di-capture):", supply.name)
             end
         end
     end
     
-    warn("[TP] Supply musuh ga ketemu (mungkin udah di-capture).")
+    warn("[TP] Supply musuh ga ketemu.")
     return false
 end
 
@@ -924,6 +984,7 @@ function _G.STHAIN.TeleportToOwnSupply()
         if supply.team == myTeam then
             local targetPart = supply.capturePart or supply.instance
             _G.STHAIN.TeleportTo(targetPart)
+            print("[TP] TP to own supply:", supply.name)
             return true
         end
     end
@@ -963,7 +1024,6 @@ end
 function _G.STHAIN.TeleportToBase()
     local results = _G.STHAIN.TeleportScan()
     
-    -- Cari Base
     for _, cap in ipairs(results.captures) do
         if string.lower(cap.name) == "base" then
             _G.STHAIN.TeleportTo(cap.instance)
@@ -972,7 +1032,6 @@ function _G.STHAIN.TeleportToBase()
         end
     end
     
-    -- Fallback: PointA
     for _, cap in ipairs(results.captures) do
         if string.lower(cap.name) == "pointa" then
             _G.STHAIN.TeleportTo(cap.instance)
@@ -981,7 +1040,6 @@ function _G.STHAIN.TeleportToBase()
         end
     end
     
-    -- Fallback: PointB
     for _, cap in ipairs(results.captures) do
         if string.lower(cap.name) == "pointb" then
             _G.STHAIN.TeleportTo(cap.instance)
@@ -1026,7 +1084,7 @@ function _G.STHAIN.TeleportToNearestEnemy()
     if not (char and hrp) then return false end
     
     local nearest, nearestDist = nil, math.huge
-    for _, model in pairs(workspace:GetChildren()) do
+    for _, model in pairs(workspace:GetDescendants()) do
         if model ~= char and model:IsA("Model") then
             local hum = model:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
@@ -1102,10 +1160,8 @@ function _G.STHAIN.SaveConfig()
         writefile("sthain_config.json", data)
     end)
     if ok then
-        print("[Config] Saved!")
         return true
     else
-        warn("[Config] Save failed:", err)
         return false
     end
 end
@@ -1123,7 +1179,6 @@ function _G.STHAIN.LoadConfig()
             for k, v in pairs(decoded) do
                 _G.STHAIN.Config[k] = v
             end
-            print("[Config] Loaded!")
             return true
         end
     end
@@ -1135,27 +1190,20 @@ function _G.STHAIN.DeleteConfig()
     pcall(function()
         delfile("sthain_config.json")
     end)
-    print("[Config] Deleted!")
     return true
 end
 
--- Auto Save
 task.spawn(function()
     while task.wait(60) do
         if _G.STHAIN.Config and _G.STHAIN.Config.Config and _G.STHAIN.Config.Config.AutoSave then
-            if _G.STHAIN.SaveConfig then
-                _G.STHAIN.SaveConfig()
-            end
+            _G.STHAIN.SaveConfig()
         end
     end
 end)
 
--- Auto Load
 task.spawn(function()
     task.wait(3)
-    if _G.STHAIN.LoadConfig then
-        _G.STHAIN.LoadConfig()
-    end
+    _G.STHAIN.LoadConfig()
 end)
 
 -- ============================================================
@@ -1176,4 +1224,4 @@ LP.CharacterAdded:Connect(function(char)
     print("[STHAIN] Character respawned, features reset")
 end)
 
-print("[STHAIN] Logic loops loaded - ALL MAP SUPPORT")
+print("[STHAIN] Logic loops loaded - FULL FIX")

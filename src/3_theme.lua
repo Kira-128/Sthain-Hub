@@ -26,7 +26,7 @@ local Theme = {
         config   = "rbxassetid://112330254035751",
         teleport = "rbxassetid://90293255250749",
         search   = "rbxassetid://72296609649861",
-        logo     = "rbxassetid://136526785382643",
+        logo     = "rbxassetid://119214446403044",
     },
     Font = {
         bold = Enum.Font.GothamBold,

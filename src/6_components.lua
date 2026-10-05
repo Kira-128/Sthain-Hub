@@ -1,6 +1,6 @@
 --[[
 ============================================================
-  [6] COMPONENTS (Collapsible + Dropdown)
+  [6] COMPONENTS (FIXED v2 - Auto Recalc Height)
 ============================================================
 ]]
 
@@ -10,6 +10,47 @@ local F = S.Theme.Font
 
 local Comp = {}
 
+-- Recalc tinggi section berdasarkan AbsoluteContentSize dari UIListLayout
+local function recalcSection(content)
+    if not content or not content.Parent then return end
+    local section = content.Parent
+    if not section:IsA("Frame") then return end
+
+    if not content.Visible then
+        content.Size = UDim2.new(1, 0, 0, 0)
+        section.Size = UDim2.new(1, -4, 0, 28)
+        return
+    end
+
+    local layout = content:FindFirstChildOfClass("UIListLayout")
+    local totalH = 0
+    if layout then
+        totalH = layout.AbsoluteContentSize.Y
+    else
+        for _, child in pairs(content:GetChildren()) do
+            if child:IsA("GuiObject") then
+                totalH = totalH + child.Size.Y.Offset + 3
+            end
+        end
+    end
+
+    content.Size = UDim2.new(1, 0, 0, totalH)
+    section.Size = UDim2.new(1, -4, 0, 28 + totalH + 3)
+end
+
+-- Setiap komponen baru masuk ke content → otomatis recalc
+local function hookAutoRecalc(content)
+    content.ChildAdded:Connect(function()
+        task.defer(function()
+            task.wait(0.02)
+            recalcSection(content)
+        end)
+    end)
+end
+
+-- ============================================================
+-- TOGGLE
+-- ============================================================
 function Comp.makeToggle(parent, name, default, callback)
     local f = Instance.new("Frame")
     f.Name = "Toggle_" .. name
@@ -61,6 +102,9 @@ function Comp.makeToggle(parent, name, default, callback)
     end)
 end
 
+-- ============================================================
+-- INPUT
+-- ============================================================
 function Comp.makeInput(parent, name, default, callback)
     local f = Instance.new("Frame")
     f.Name = "Input_" .. name
@@ -100,6 +144,9 @@ function Comp.makeInput(parent, name, default, callback)
     end)
 end
 
+-- ============================================================
+-- BUTTON
+-- ============================================================
 function Comp.makeButton(parent, name, callback)
     local b = Instance.new("TextButton")
     b.Name = "Button_" .. name
@@ -125,6 +172,9 @@ function Comp.makeButton(parent, name, callback)
     end)
 end
 
+-- ============================================================
+-- DROPDOWN
+-- ============================================================
 function Comp.makeDropdown(parent, name, options, callback)
     local f = Instance.new("Frame")
     f.Name = "Dropdown_" .. name
@@ -168,7 +218,7 @@ function Comp.makeDropdown(parent, name, options, callback)
     popup.BackgroundColor3 = C.bg4
     popup.BorderSizePixel = 0
     popup.Visible = false
-    popup.ZIndex = 10
+    popup.ZIndex = 50
     popup.Parent = f
     Instance.new("UICorner", popup).CornerRadius = UDim.new(0, 5)
 
@@ -185,6 +235,7 @@ function Comp.makeDropdown(parent, name, options, callback)
         optBtn.Font = F.norm
         optBtn.BackgroundColor3 = C.bg4
         optBtn.BorderSizePixel = 0
+        optBtn.ZIndex = 51
         optBtn.Parent = popup
         Instance.new("UICorner", optBtn).CornerRadius = UDim.new(0, 4)
 
@@ -203,6 +254,9 @@ function Comp.makeDropdown(parent, name, options, callback)
     end)
 end
 
+-- ============================================================
+-- SECTION
+-- ============================================================
 function Comp.makeSection(parent, title, defaultOpen)
     local section = Instance.new("Frame")
     section.Name = "Section_" .. title
@@ -252,6 +306,7 @@ function Comp.makeSection(parent, title, defaultOpen)
     content.LayoutOrder = 2
     content.Size = UDim2.new(1, 0, 0, 0)
     content.BackgroundTransparency = 1
+    content.ClipsDescendants = false
     content.Visible = defaultOpen
     content.Parent = section
 
@@ -262,30 +317,24 @@ function Comp.makeSection(parent, title, defaultOpen)
 
     local isOpen = defaultOpen
 
-    local function updateHeight()
-        if isOpen then
-            local totalH = 0
-            for _, child in pairs(content:GetChildren()) do
-                if child:IsA("Frame") then
-                    totalH = totalH + child.Size.Y.Offset + 3
-                end
-            end
-            content.Size = UDim2.new(1, 0, 0, totalH)
-            section.Size = UDim2.new(1, -4, 0, 28 + totalH + 3)
-        else
-            content.Size = UDim2.new(1, 0, 0, 0)
-            section.Size = UDim2.new(1, -4, 0, 28)
-        end
-    end
+    hookAutoRecalc(content)
 
     header.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         arrow.Text = isOpen and "▼" or "▶"
         content.Visible = isOpen
-        updateHeight()
+        task.defer(function()
+            task.wait(0.02)
+            recalcSection(content)
+        end)
     end)
 
-    return content, updateHeight
+    task.defer(function()
+        task.wait(0.15)
+        if defaultOpen then recalcSection(content) end
+    end)
+
+    return content, function() recalcSection(content) end, section
 end
 
 S.Comp = Comp

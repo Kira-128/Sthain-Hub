@@ -1,6 +1,8 @@
 --[[
 ============================================================
   [5] GUI (Compact + PC + Mobile)
+  Logo Header: kotak abu-abu
+  Float Button: logo doang tanpa lingkaran
 ============================================================
 ]]
 
@@ -15,28 +17,27 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
 
--- FLOAT BUTTON
+-- ============================================================
+-- FLOAT BUTTON (logo doang, tanpa lingkaran hitam)
+-- ============================================================
 local floatBtn = Instance.new("TextButton")
-floatBtn.Size = UDim2.new(0, 42, 0, 42)
-floatBtn.Position = UDim2.new(0, 30, 0.5, -21)
+floatBtn.Size = UDim2.new(0, 48, 0, 48)
+floatBtn.Position = UDim2.new(0, 30, 0.5, -24)
 floatBtn.Text = ""
-floatBtn.BackgroundColor3 = C.bg2
+floatBtn.BackgroundTransparency = 1
 floatBtn.BorderSizePixel = 0
 floatBtn.AutoButtonColor = false
 floatBtn.Parent = gui
-Instance.new("UICorner", floatBtn).CornerRadius = UDim.new(1, 0)
-
-local fStroke = Instance.new("UIStroke")
-fStroke.Color = C.accent
-fStroke.Thickness = 1.5
-fStroke.Parent = floatBtn
 
 local fIcon = Instance.new("ImageLabel")
-fIcon.Size = UDim2.new(0, 20, 0, 20)
-fIcon.Position = UDim2.new(0.5, -10, 0.5, -10)
+fIcon.Name = "FloatLogo"
+fIcon.Size = UDim2.new(1, 0, 1, 0)
+fIcon.Position = UDim2.new(0, 0, 0, 0)
 fIcon.BackgroundTransparency = 1
+fIcon.BorderSizePixel = 0
 fIcon.Image = I.logo
-fIcon.ImageColor3 = C.accent
+fIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+fIcon.ScaleType = Enum.ScaleType.Fit
 fIcon.Parent = floatBtn
 
 -- DRAG
@@ -67,7 +68,9 @@ floatBtn.InputChanged:Connect(function(input)
     end
 end)
 
+-- ============================================================
 -- MAIN FRAME (460x320)
+-- ============================================================
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 460, 0, 320)
 mainFrame.Position = UDim2.new(0.5, -230, 0.5, -160)
@@ -83,31 +86,9 @@ mStroke.Color = C.stroke
 mStroke.Thickness = 1
 mStroke.Parent = mainFrame
 
--- DRAG MAIN
-local mainDrag, mainStart, mainPos
-mainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
-        mainDrag = true
-        mainStart = input.Position
-        mainPos = mainFrame.Position
-    end
-end)
-mainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch and mainDrag then
-        local delta = input.Position - mainStart
-        mainFrame.Position = UDim2.new(
-            mainPos.X.Scale, mainPos.X.Offset + delta.X,
-            mainPos.Y.Scale, mainPos.Y.Offset + delta.Y
-        )
-    end
-end)
-mainFrame.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
-        mainDrag = false
-    end
-end)
-
+-- ============================================================
 -- HEADER (36px)
+-- ============================================================
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1, 0, 0, 36)
 header.BackgroundColor3 = C.bg2
@@ -122,17 +103,30 @@ hFix.BackgroundColor3 = C.bg2
 hFix.BorderSizePixel = 0
 hFix.Parent = header
 
+-- LOGO HEADER — di dalam kotak abu-abu
+local logoBox = Instance.new("Frame")
+logoBox.Name = "LogoBox"
+logoBox.Size = UDim2.new(0, 24, 0, 24)
+logoBox.Position = UDim2.new(0, 10, 0.5, -12)
+logoBox.BackgroundColor3 = C.bg3
+logoBox.BorderSizePixel = 0
+logoBox.Parent = header
+Instance.new("UICorner", logoBox).CornerRadius = UDim.new(0, 4)
+
 local lIcon = Instance.new("ImageLabel")
-lIcon.Size = UDim2.new(0, 16, 0, 16)
-lIcon.Position = UDim2.new(0, 12, 0.5, -8)
+lIcon.Name = "LogoHeader"
+lIcon.Size = UDim2.new(1, -4, 1, -4)
+lIcon.Position = UDim2.new(0, 2, 0, 2)
 lIcon.BackgroundTransparency = 1
+lIcon.BorderSizePixel = 0
 lIcon.Image = I.logo
-lIcon.ImageColor3 = C.accent
-lIcon.Parent = header
+lIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+lIcon.ScaleType = Enum.ScaleType.Fit
+lIcon.Parent = logoBox
 
 local lText = Instance.new("TextLabel")
 lText.Size = UDim2.new(0, 80, 1, 0)
-lText.Position = UDim2.new(0, 34, 0, 0)
+lText.Position = UDim2.new(0, 42, 0, 0)
 lText.Text = "STHAIN"
 lText.TextColor3 = C.accent
 lText.TextSize = 13
@@ -143,14 +137,14 @@ lText.Parent = header
 
 local sep = Instance.new("Frame")
 sep.Size = UDim2.new(0, 1, 0, 18)
-sep.Position = UDim2.new(0, 90, 0.5, -9)
+sep.Position = UDim2.new(0, 98, 0.5, -9)
 sep.BackgroundColor3 = C.stroke
 sep.BorderSizePixel = 0
 sep.Parent = header
 
 local sub = Instance.new("TextLabel")
 sub.Size = UDim2.new(0, 200, 1, 0)
-sub.Position = UDim2.new(0, 100, 0, 0)
+sub.Position = UDim2.new(0, 108, 0, 0)
 sub.Text = "Command An Army"
 sub.TextColor3 = C.textDim
 sub.TextSize = 10
@@ -183,7 +177,9 @@ closeBtn.BorderSizePixel = 0
 closeBtn.Parent = header
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
 
+-- ============================================================
 -- SEARCH
+-- ============================================================
 local searchFrame = Instance.new("Frame")
 searchFrame.Size = UDim2.new(0, 160, 0, 26)
 searchFrame.Position = UDim2.new(0, 10, 0, 44)
@@ -214,7 +210,9 @@ searchBox.TextXAlignment = Enum.TextXAlignment.Left
 searchBox.ClearTextOnFocus = false
 searchBox.Parent = searchFrame
 
+-- ============================================================
 -- SIDEBAR
+-- ============================================================
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 120, 1, -90)
 sidebar.Position = UDim2.new(0, 10, 0, 78)
@@ -233,7 +231,9 @@ sPad.PaddingTop = UDim.new(0, 6)
 sPad.PaddingBottom = UDim.new(0, 6)
 sPad.Parent = sidebar
 
--- CONTENT
+-- ============================================================
+-- CONTENT PANEL
+-- ============================================================
 local contentPanel = Instance.new("Frame")
 contentPanel.Size = UDim2.new(1, -140, 1, -90)
 contentPanel.Position = UDim2.new(0, 130, 0, 78)
@@ -261,6 +261,9 @@ tLine.BorderSizePixel = 0
 tLine.Parent = contentPanel
 Instance.new("UICorner", tLine).CornerRadius = UDim.new(1, 0)
 
+-- ============================================================
+-- EXPORT
+-- ============================================================
 S.GUI = {
     Screen = gui,
     FloatBtn = floatBtn,

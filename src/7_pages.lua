@@ -1,7 +1,6 @@
 --[[
 ============================================================
-  [7] PAGES (Combat + Esp + Teleport + Settings + Config)
-  DEBUGGED - No new features, only fixes
+  [7] PAGES (FIXED v2 - No task.spawn delay)
 ============================================================
 ]]
 
@@ -123,7 +122,7 @@ local function makeTab(iconId, name)
 end
 
 -- ============================================================
--- CREATE PAGES
+-- CREATE PAGES & TABS
 -- ============================================================
 createPage("Combat")
 createPage("Esp")
@@ -131,9 +130,6 @@ createPage("Teleport")
 createPage("Settings")
 createPage("Config")
 
--- ============================================================
--- CREATE TABS
--- ============================================================
 makeTab(I.combat, "Combat")
 makeTab(I.visual, "Esp")
 makeTab(I.teleport, "Teleport")
@@ -146,54 +142,21 @@ makeTab(I.config, "Config")
 local CC = S.Config.Combat
 
 local autoCombat = S.Comp.makeSection(pages["Combat"], "Auto Combat", true)
-S.Comp.makeToggle(autoCombat, "Auto Attack (V)", CC.AutoAttack, function(v) 
-    CC.AutoAttack = v
-    save()
-end)
-S.Comp.makeToggle(autoCombat, "Auto Rush (B)", CC.AutoRush, function(v) 
-    CC.AutoRush = v
-    save()
-end)
-S.Comp.makeToggle(autoCombat, "Inf Ammo", CC.InfAmmo, function(v) 
-    CC.InfAmmo = v
-    save()
-end)
+S.Comp.makeToggle(autoCombat, "Auto Attack (V)", CC.AutoAttack, function(v) CC.AutoAttack = v save() end)
+S.Comp.makeToggle(autoCombat, "Auto Rush (B)", CC.AutoRush, function(v) CC.AutoRush = v save() end)
+S.Comp.makeToggle(autoCombat, "Inf Ammo", CC.InfAmmo, function(v) CC.InfAmmo = v save() end)
 
 local pvpSection = S.Comp.makeSection(pages["Combat"], "PvP", true)
-S.Comp.makeToggle(pvpSection, "Kill Aura", CC.KillAura, function(v) 
-    CC.KillAura = v
-    save()
-end)
-S.Comp.makeToggle(pvpSection, "Target Lock", CC.TargetLock, function(v) 
-    CC.TargetLock = v
-    save()
-end)
-S.Comp.makeToggle(pvpSection, "Auto Heal", CC.AutoHeal, function(v) 
-    CC.AutoHeal = v
-    save()
-end)
-S.Comp.makeToggle(pvpSection, "Anti-Stun", CC.AntiStun, function(v) 
-    CC.AntiStun = v
-    save()
-end)
+S.Comp.makeToggle(pvpSection, "Kill Aura", CC.KillAura, function(v) CC.KillAura = v save() end)
+S.Comp.makeToggle(pvpSection, "Target Lock", CC.TargetLock, function(v) CC.TargetLock = v save() end)
+S.Comp.makeToggle(pvpSection, "Auto Heal", CC.AutoHeal, function(v) CC.AutoHeal = v save() end)
+S.Comp.makeToggle(pvpSection, "Anti-Stun", CC.AntiStun, function(v) CC.AntiStun = v save() end)
 
 local combatDelay = S.Comp.makeSection(pages["Combat"], "Delay Settings", false)
-S.Comp.makeInput(combatDelay, "Attack Delay", CC.AttackDelay, function(v) 
-    CC.AttackDelay = v
-    save()
-end)
-S.Comp.makeInput(combatDelay, "Rush Delay", CC.RushDelay, function(v) 
-    CC.RushDelay = v
-    save()
-end)
-S.Comp.makeInput(combatDelay, "Kill Aura Range", CC.KillAuraRange, function(v) 
-    CC.KillAuraRange = v
-    save()
-end)
-S.Comp.makeInput(combatDelay, "Heal Threshold", CC.HealThreshold, function(v) 
-    CC.HealThreshold = v
-    save()
-end)
+S.Comp.makeInput(combatDelay, "Attack Delay", CC.AttackDelay, function(v) CC.AttackDelay = v save() end)
+S.Comp.makeInput(combatDelay, "Rush Delay", CC.RushDelay, function(v) CC.RushDelay = v save() end)
+S.Comp.makeInput(combatDelay, "Kill Aura Range", CC.KillAuraRange, function(v) CC.KillAuraRange = v save() end)
+S.Comp.makeInput(combatDelay, "Heal Threshold", CC.HealThreshold, function(v) CC.HealThreshold = v save() end)
 
 -- ============================================================
 -- TAB ESP
@@ -201,28 +164,13 @@ end)
 local VV = S.Config.Visual
 
 local enableEsp = S.Comp.makeSection(pages["Esp"], "Enable Esp", true)
-S.Comp.makeToggle(enableEsp, "Enable Esp", VV.Chams, function(v) 
-    VV.Chams = v
-    save()
-end)
+S.Comp.makeToggle(enableEsp, "Enable Esp", VV.Chams, function(v) VV.Chams = v save() end)
 
 local espSetting = S.Comp.makeSection(pages["Esp"], "Esp Setting", true)
-S.Comp.makeToggle(espSetting, "Esp Box", VV.ESPBox, function(v) 
-    VV.ESPBox = v
-    save()
-end)
-S.Comp.makeToggle(espSetting, "Esp Tracer", VV.ESPTracer, function(v) 
-    VV.ESPTracer = v
-    save()
-end)
-S.Comp.makeToggle(espSetting, "Esp Health", VV.ESPHealth, function(v) 
-    VV.ESPHealth = v
-    save()
-end)
-S.Comp.makeToggle(espSetting, "Esp Name", VV.ESPName, function(v) 
-    VV.ESPName = v
-    save()
-end)
+S.Comp.makeToggle(espSetting, "Esp Box", VV.ESPBox, function(v) VV.ESPBox = v save() end)
+S.Comp.makeToggle(espSetting, "Esp Tracer", VV.ESPTracer, function(v) VV.ESPTracer = v save() end)
+S.Comp.makeToggle(espSetting, "Esp Health", VV.ESPHealth, function(v) VV.ESPHealth = v save() end)
+S.Comp.makeToggle(espSetting, "Esp Name", VV.ESPName, function(v) VV.ESPName = v save() end)
 
 -- ============================================================
 -- TAB TELEPORT
@@ -230,75 +178,45 @@ end)
 local TT = S.Config.Teleport
 
 local tpSetting = S.Comp.makeSection(pages["Teleport"], "Teleport Setting", true)
-S.Comp.makeToggle(tpSetting, "Enable Teleport", TT.Enabled, function(v) 
-    TT.Enabled = v
-    save()
-end)
-S.Comp.makeInput(tpSetting, "Smooth Steps", TT.SmoothSteps, function(v) 
-    TT.SmoothSteps = v
-    save()
-end)
-S.Comp.makeInput(tpSetting, "Offset Y", TT.OffsetY, function(v) 
-    TT.OffsetY = v
-    save()
-end)
+S.Comp.makeToggle(tpSetting, "Enable Teleport", TT.Enabled, function(v) TT.Enabled = v save() end)
+S.Comp.makeInput(tpSetting, "Smooth Steps", TT.SmoothSteps, function(v) TT.SmoothSteps = v save() end)
+S.Comp.makeInput(tpSetting, "Offset Y", TT.OffsetY, function(v) TT.OffsetY = v save() end)
 
 local tpCapture = S.Comp.makeSection(pages["Teleport"], "Capture Point", true)
 S.Comp.makeButton(tpCapture, "TP to Nearest Capture", function()
-    if _G.STHAIN.TeleportToNearestCapture then
-        _G.STHAIN.TeleportToNearestCapture()
-    end
+    if _G.STHAIN.TeleportToNearestCapture then _G.STHAIN.TeleportToNearestCapture() end
 end)
 S.Comp.makeButton(tpCapture, "TP to Base", function()
-    if _G.STHAIN.TeleportToBase then
-        _G.STHAIN.TeleportToBase()
-    end
+    if _G.STHAIN.TeleportToBase then _G.STHAIN.TeleportToBase() end
 end)
 S.Comp.makeButton(tpCapture, "TP to Point A", function()
-    if _G.STHAIN.TeleportToPointA then
-        _G.STHAIN.TeleportToPointA()
-    end
+    if _G.STHAIN.TeleportToPointA then _G.STHAIN.TeleportToPointA() end
 end)
 S.Comp.makeButton(tpCapture, "TP to Point B", function()
-    if _G.STHAIN.TeleportToPointB then
-        _G.STHAIN.TeleportToPointB()
-    end
+    if _G.STHAIN.TeleportToPointB then _G.STHAIN.TeleportToPointB() end
 end)
 
 local tpSupply = S.Comp.makeSection(pages["Teleport"], "Supply", true)
 S.Comp.makeButton(tpSupply, "TP to Enemy Supply", function()
-    if _G.STHAIN.TeleportToEnemySupply then
-        _G.STHAIN.TeleportToEnemySupply()
-    end
+    if _G.STHAIN.TeleportToEnemySupply then _G.STHAIN.TeleportToEnemySupply() end
 end)
 S.Comp.makeButton(tpSupply, "TP to Own Supply", function()
-    if _G.STHAIN.TeleportToOwnSupply then
-        _G.STHAIN.TeleportToOwnSupply()
-    end
+    if _G.STHAIN.TeleportToOwnSupply then _G.STHAIN.TeleportToOwnSupply() end
 end)
 
 local tpPlayer = S.Comp.makeSection(pages["Teleport"], "Player", false)
 S.Comp.makeButton(tpPlayer, "TP to Nearest Enemy", function()
-    if _G.STHAIN.TeleportToNearestEnemy then
-        _G.STHAIN.TeleportToNearestEnemy()
-    end
+    if _G.STHAIN.TeleportToNearestEnemy then _G.STHAIN.TeleportToNearestEnemy() end
 end)
 S.Comp.makeButton(tpPlayer, "TP to Teammate", function()
-    if _G.STHAIN.TeleportToTeammate then
-        _G.STHAIN.TeleportToTeammate()
-    end
+    if _G.STHAIN.TeleportToTeammate then _G.STHAIN.TeleportToTeammate() end
 end)
 
 local tpMisc = S.Comp.makeSection(pages["Teleport"], "Misc", false)
 S.Comp.makeButton(tpMisc, "Scan Locations", function()
     if _G.STHAIN.TeleportScan then
-        local results = _G.STHAIN.TeleportScan()
-        print("=== TELEPORT SCAN ===")
-        print("Captures:", #results.captures)
-        print("Supplies:", #results.supplies)
-        for i, s in ipairs(results.supplies) do
-            print("  " .. i .. ". " .. s.name .. " | team: " .. s.team)
-        end
+        local r = _G.STHAIN.TeleportScan()
+        print("[SCAN] Captures:", #r.captures, "Supplies:", #r.supplies)
     end
 end)
 
@@ -308,72 +226,27 @@ end)
 local MM = S.Config.Movement
 local XX = S.Config.Misc
 
-local utilityContent, updateUtility = S.Comp.makeSection(pages["Settings"], "Player Utility", true)
-S.Comp.makeInput(utilityContent, "Speed Value", MM.WalkSpeed, function(v) 
-    MM.WalkSpeed = v
-    save()
-end)
-S.Comp.makeToggle(utilityContent, "No Clip", MM.Noclip, function(v) 
-    MM.Noclip = v
-    save()
-end)
-S.Comp.makeToggle(utilityContent, "Fly", MM.Fly, function(v) 
-    MM.Fly = v
-    save()
-end)
-S.Comp.makeToggle(utilityContent, "Infinite Jump", MM.InfJump, function(v) 
-    MM.InfJump = v
-    save()
-end)
-S.Comp.makeInput(utilityContent, "Fly Speed", MM.FlySpeed, function(v) 
-    MM.FlySpeed = v
-    save()
-end)
-S.Comp.makeInput(utilityContent, "Hip Height", MM.HipHeight, function(v) 
-    MM.HipHeight = v
-    save()
-end)
-S.Comp.makeInput(utilityContent, "Jump Power", MM.JumpPower, function(v) 
-    MM.JumpPower = v
-    save()
-end)
-task.spawn(function() task.wait(0.1) updateUtility() end)
+local utilityContent = S.Comp.makeSection(pages["Settings"], "Player Utility", true)
+S.Comp.makeInput(utilityContent, "Speed Value", MM.WalkSpeed, function(v) MM.WalkSpeed = v save() end)
+S.Comp.makeToggle(utilityContent, "No Clip", MM.Noclip, function(v) MM.Noclip = v save() end)
+S.Comp.makeToggle(utilityContent, "Fly", MM.Fly, function(v) MM.Fly = v save() end)
+S.Comp.makeToggle(utilityContent, "Infinite Jump", MM.InfJump, function(v) MM.InfJump = v save() end)
+S.Comp.makeInput(utilityContent, "Fly Speed", MM.FlySpeed, function(v) MM.FlySpeed = v save() end)
+S.Comp.makeInput(utilityContent, "Hip Height", MM.HipHeight, function(v) MM.HipHeight = v save() end)
+S.Comp.makeInput(utilityContent, "Jump Power", MM.JumpPower, function(v) MM.JumpPower = v save() end)
 
-local miscContent, updateMisc = S.Comp.makeSection(pages["Settings"], "Misc", false)
-S.Comp.makeToggle(miscContent, "Weapon Range", XX.WeaponRange, function(v) 
-    XX.WeaponRange = v
-    save()
-end)
-S.Comp.makeToggle(miscContent, "Auto Teleport", XX.AutoTP, function(v) 
-    XX.AutoTP = v
-    save()
-end)
-S.Comp.makeToggle(miscContent, "Anti-AFK", XX.AntiAFK, function(v) 
-    XX.AntiAFK = v
-    save()
-end)
-S.Comp.makeInput(miscContent, "Range Multi", XX.RangeMultiplier, function(v) 
-    XX.RangeMultiplier = v
-    save()
-end)
-S.Comp.makeInput(miscContent, "TP Range", XX.AutoTPRange, function(v) 
-    XX.AutoTPRange = v
-    save()
-end)
-task.spawn(function() task.wait(0.1) updateMisc() end)
+local miscContent = S.Comp.makeSection(pages["Settings"], "Misc", false)
+S.Comp.makeToggle(miscContent, "Weapon Range", XX.WeaponRange, function(v) XX.WeaponRange = v save() end)
+S.Comp.makeToggle(miscContent, "Auto Teleport", XX.AutoTP, function(v) XX.AutoTP = v save() end)
+S.Comp.makeToggle(miscContent, "Anti-AFK", XX.AntiAFK, function(v) XX.AntiAFK = v save() end)
+S.Comp.makeInput(miscContent, "Range Multi", XX.RangeMultiplier, function(v) XX.RangeMultiplier = v save() end)
+S.Comp.makeInput(miscContent, "TP Range", XX.AutoTPRange, function(v) XX.AutoTPRange = v save() end)
 
-local visualContent, updateVisual = S.Comp.makeSection(pages["Settings"], "Visuals", false)
-S.Comp.makeToggle(visualContent, "Full Bright", VV.Fullbright, function(v) 
-    VV.Fullbright = v
-    save()
-end)
-S.Comp.makeToggle(visualContent, "No Fog", VV.NoFog, function(v) 
-    VV.NoFog = v
-    save()
-end)
-task.spawn(function() task.wait(0.1) updateVisual() end)
+local visualContent = S.Comp.makeSection(pages["Settings"], "Visuals", false)
+S.Comp.makeToggle(visualContent, "Full Bright", VV.Fullbright, function(v) VV.Fullbright = v save() end)
+S.Comp.makeToggle(visualContent, "No Fog", VV.NoFog, function(v) VV.NoFog = v save() end)
 
-local serverContent, updateServer = S.Comp.makeSection(pages["Settings"], "Server", false)
+local serverContent = S.Comp.makeSection(pages["Settings"], "Server", false)
 S.Comp.makeButton(serverContent, "Rejoin Server", function()
     pcall(function()
         game:GetService("TeleportService"):Teleport(game.PlaceId, S.LP)
@@ -393,12 +266,9 @@ S.Comp.makeButton(serverContent, "Server Hop (Find Small Server)", function()
                 end
             end
         end
-        if best then
-            TS:TeleportToPlaceInstance(game.PlaceId, best.id, S.LP)
-        end
+        if best then TS:TeleportToPlaceInstance(game.PlaceId, best.id, S.LP) end
     end)
 end)
-task.spawn(function() task.wait(0.1) updateServer() end)
 
 -- ============================================================
 -- TAB CONFIG
@@ -406,29 +276,17 @@ task.spawn(function() task.wait(0.1) updateServer() end)
 local cfg = S.Config.Config
 
 local autoSaveSection = S.Comp.makeSection(pages["Config"], "Auto Save", true)
-S.Comp.makeToggle(autoSaveSection, "Auto Save Config", cfg.AutoSave, function(v)
-    cfg.AutoSave = v
-    save()
-end)
+S.Comp.makeToggle(autoSaveSection, "Auto Save Config", cfg.AutoSave, function(v) cfg.AutoSave = v save() end)
 
 local configMgmt = S.Comp.makeSection(pages["Config"], "Config Management", true)
 S.Comp.makeButton(configMgmt, "Save Config Now", function()
-    if _G.STHAIN.SaveConfig then
-        _G.STHAIN.SaveConfig()
-        print("[Config] Saved!")
-    end
+    if _G.STHAIN.SaveConfig then _G.STHAIN.SaveConfig() end
 end)
 S.Comp.makeButton(configMgmt, "Load Config Now", function()
-    if _G.STHAIN.LoadConfig then
-        _G.STHAIN.LoadConfig()
-        print("[Config] Loaded!")
-    end
+    if _G.STHAIN.LoadConfig then _G.STHAIN.LoadConfig() end
 end)
 S.Comp.makeButton(configMgmt, "Delete Config", function()
-    if _G.STHAIN.DeleteConfig then
-        _G.STHAIN.DeleteConfig()
-        print("[Config] Deleted!")
-    end
+    if _G.STHAIN.DeleteConfig then _G.STHAIN.DeleteConfig() end
 end)
 
 -- ============================================================
@@ -475,4 +333,4 @@ end)
 S.GUI.FloatBtn.Visible = true
 S.GUI.MainFrame.Visible = false
 
-print("[STHAIN] Pages loaded - DEBUGGED")
+print("[STHAIN] Pages loaded - FIXED v2")

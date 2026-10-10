@@ -1,6 +1,10 @@
 --[[
 ============================================================
-  [7] PAGES (FIXED v2 - No task.spawn delay)
+  [7] PAGES (FINAL FIX v5)
+  - Load Config Now dihapus
+  - Esp Tracer toggle dihapus
+  - Section Auto Claim di tab Settings
+  - AutoSave callback fix
 ============================================================
 ]]
 
@@ -12,18 +16,12 @@ local F = S.Theme.Font
 local pages = {}
 local tabs = {}
 
--- ============================================================
--- HELPER: AUTO SAVE
--- ============================================================
 local function save()
-    if S.Config.Config.AutoSave and _G.STHAIN.SaveConfig then
+    if _G.STHAIN.SaveConfig then
         task.spawn(_G.STHAIN.SaveConfig)
     end
 end
 
--- ============================================================
--- CREATE PAGE
--- ============================================================
 local function createPage(name)
     local page = Instance.new("ScrollingFrame")
     page.Name = "Page_" .. name
@@ -45,9 +43,6 @@ local function createPage(name)
     return page
 end
 
--- ============================================================
--- SWITCH PAGE
--- ============================================================
 local function switchPage(name)
     for n, p in pairs(pages) do
         p.Visible = (n == name)
@@ -59,9 +54,6 @@ local function switchPage(name)
     }):Play()
 end
 
--- ============================================================
--- MAKE TAB
--- ============================================================
 local function makeTab(iconId, name)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 30)
@@ -121,9 +113,6 @@ local function makeTab(iconId, name)
     table.insert(tabs, {btn = btn, icon = ic, text = tx, bar = acc, name = name})
 end
 
--- ============================================================
--- CREATE PAGES & TABS
--- ============================================================
 createPage("Combat")
 createPage("Esp")
 createPage("Teleport")
@@ -168,7 +157,6 @@ S.Comp.makeToggle(enableEsp, "Enable Esp", VV.Chams, function(v) VV.Chams = v sa
 
 local espSetting = S.Comp.makeSection(pages["Esp"], "Esp Setting", true)
 S.Comp.makeToggle(espSetting, "Esp Box", VV.ESPBox, function(v) VV.ESPBox = v save() end)
-S.Comp.makeToggle(espSetting, "Esp Tracer", VV.ESPTracer, function(v) VV.ESPTracer = v save() end)
 S.Comp.makeToggle(espSetting, "Esp Health", VV.ESPHealth, function(v) VV.ESPHealth = v save() end)
 S.Comp.makeToggle(espSetting, "Esp Name", VV.ESPName, function(v) VV.ESPName = v save() end)
 
@@ -270,23 +258,49 @@ S.Comp.makeButton(serverContent, "Server Hop (Find Small Server)", function()
     end)
 end)
 
+local autoClaimContent = S.Comp.makeSection(pages["Settings"], "Auto Claim", true)
+S.Comp.makeToggle(autoClaimContent, "Auto Claim Quest", XX.AutoClaimQuest or false, function(v)
+    XX.AutoClaimQuest = v
+    save()
+end)
+S.Comp.makeButton(autoClaimContent, "Klaim Misi Sekarang", function()
+    if _G.STHAIN.ClaimQuests then
+        _G.STHAIN.ClaimQuests()
+    end
+end)
+S.Comp.makeToggle(autoClaimContent, "Auto Redeem Code", XX.AutoRedeemCode or false, function(v)
+    XX.AutoRedeemCode = v
+    save()
+end)
+S.Comp.makeButton(autoClaimContent, "Redeem Semua Code Sekarang", function()
+    if _G.STHAIN.RedeemAllCodes then
+        _G.STHAIN.RedeemAllCodes()
+    end
+end)
+
 -- ============================================================
 -- TAB CONFIG
 -- ============================================================
 local cfg = S.Config.Config
 
 local autoSaveSection = S.Comp.makeSection(pages["Config"], "Auto Save", true)
-S.Comp.makeToggle(autoSaveSection, "Auto Save Config", cfg.AutoSave, function(v) cfg.AutoSave = v save() end)
+S.Comp.makeToggle(autoSaveSection, "Auto Save Config", cfg.AutoSave, function(v)
+    cfg.AutoSave = v
+    if _G.STHAIN.SaveConfig then
+        task.spawn(_G.STHAIN.SaveConfig)
+    end
+end)
 
 local configMgmt = S.Comp.makeSection(pages["Config"], "Config Management", true)
 S.Comp.makeButton(configMgmt, "Save Config Now", function()
-    if _G.STHAIN.SaveConfig then _G.STHAIN.SaveConfig() end
-end)
-S.Comp.makeButton(configMgmt, "Load Config Now", function()
-    if _G.STHAIN.LoadConfig then _G.STHAIN.LoadConfig() end
+    if _G.STHAIN.SaveConfig then
+        _G.STHAIN.SaveConfig()
+    end
 end)
 S.Comp.makeButton(configMgmt, "Delete Config", function()
-    if _G.STHAIN.DeleteConfig then _G.STHAIN.DeleteConfig() end
+    if _G.STHAIN.DeleteConfig then
+        _G.STHAIN.DeleteConfig()
+    end
 end)
 
 -- ============================================================
@@ -333,4 +347,4 @@ end)
 S.GUI.FloatBtn.Visible = true
 S.GUI.MainFrame.Visible = false
 
-print("[STHAIN] Pages loaded - FIXED v2")
+print("[STHAIN] Pages loaded - FINAL v5")

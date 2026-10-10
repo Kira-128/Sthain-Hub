@@ -13,8 +13,8 @@ local Theme = {
         bg4      = Color3.fromRGB(38, 38, 43),    -- card dalam / item
         panel    = Color3.fromRGB(22, 22, 26),    -- main panel background
 
-        -- Accent (STHAIN orange)
-        accent   = Color3.fromRGB(255, 140, 60),
+        -- Accent (ungu modern)
+        accent   = Color3.fromRGB(123, 104, 238),
 
         -- Text hierarchy
         text     = Color3.fromRGB(240, 240, 245), -- text primary (putih soft)

@@ -1,6 +1,11 @@
 --[[
 ============================================================
-  [8] LOGIC LOOPS (FINAL FIX v3)
+  [8] LOGIC LOOPS (FINAL FIX v5)
+  - Auto Redeem Code (Radio Times)
+  - Auto Claim Quest (Harian + Mingguan)
+  - Optimasi ESP loop (0.25s)
+  - Hapus Tracer
+  - AutoSave bind-to-close + interval 30s
 ============================================================
 ]]
 
@@ -55,7 +60,6 @@ end)
 -- ============================================================
 -- NOCLIP
 -- ============================================================
-local lastSafePos = nil
 local noclipOriginal = {}
 
 local function cleanupNoclip()
@@ -65,13 +69,6 @@ local function cleanupNoclip()
         end
     end
     noclipOriginal = {}
-    local hum = Utils.getHum()
-    if hum then
-        pcall(function()
-            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-            hum:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
-        end)
-    end
 end
 
 Run.Heartbeat:Connect(function()
@@ -82,11 +79,6 @@ Run.Heartbeat:Connect(function()
     if not (hrp and hum) then return end
 
     if Config.Movement.Noclip then
-        pcall(function()
-            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-            hum:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
-            hum:ChangeState(Enum.HumanoidStateType.Running)
-        end)
         for _, part in pairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
                 if noclipOriginal[part] == nil then
@@ -95,28 +87,11 @@ Run.Heartbeat:Connect(function()
                 part.CanCollide = false
             end
         end
-        if not Config.Movement.Fly and hrp.Velocity.Y < -10 then
-            hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
-        end
-        if hrp.Position.Y > -50 then lastSafePos = hrp.Position end
         State.Noclip = true
     elseif State.Noclip then
         cleanupNoclip()
         if hrp then hrp.CanCollide = true end
         State.Noclip = false
-    end
-end)
-
-task.spawn(function()
-    while task.wait(0.5) do
-        if Config.Movement.Noclip and lastSafePos then
-            local hrp = Utils.getHRP()
-            if hrp and hrp.Position.Y < -50 then
-                hrp.CFrame = CFrame.new(lastSafePos + Vector3.new(0, 5, 0))
-                hrp.Velocity = Vector3.zero
-                print("[Noclip] Restored from fall")
-            end
-        end
     end
 end)
 
@@ -197,9 +172,7 @@ task.spawn(function()
             if hum then
                 local st = hum:GetState()
                 if st == Enum.HumanoidStateType.Freefall or st == Enum.HumanoidStateType.Jumping then
-                    pcall(function()
-                        hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                    end)
+                    pcall(function() hum:ChangeState(Enum.HumanoidStateType.Jumping) end)
                 end
             end
         end
@@ -249,7 +222,7 @@ end)
 -- ============================================================
 local killAuraCD = 0
 task.spawn(function()
-    while task.wait(0.05) do
+    while task.wait(0.1) do
         if Config.Combat.KillAura then
             local char = Utils.getChar()
             local hrp = Utils.getHRP()
@@ -269,12 +242,6 @@ task.spawn(function()
                 end
             end
             if nearest then
-                local myLook = hrp.CFrame.LookVector
-                local toEnemy = (nearest.Position - hrp.Position).Unit
-                if myLook:Dot(toEnemy) < 0.7 then
-                    local targetCF = CFrame.new(hrp.Position, Vector3.new(nearest.Position.X, hrp.Position.Y, nearest.Position.Z))
-                    hrp.CFrame = hrp.CFrame:Lerp(targetCF, 0.5)
-                end
                 if tick() - killAuraCD >= 0.3 then
                     killAuraCD = tick()
                     Utils.sendKey(Enum.KeyCode.V, 0.05)
@@ -288,7 +255,7 @@ end)
 -- TARGET LOCK
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.05) do
+    while task.wait(0.1) do
         if Config.Combat.TargetLock then
             local char = Utils.getChar()
             local hrp = Utils.getHRP()
@@ -400,11 +367,11 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ESP (Box + Tracer + Name + Health + Chams)
+-- ESP (Box + Name + Health + Chams, NO Tracer)
+-- 1 loop, update 0.25s
 -- ============================================================
 local espCache = {}
 local espGuiParent = (gethui and gethui()) or game:GetService("CoreGui")
-local hasDrawing = (typeof(Drawing) == "table") and (typeof(Drawing.new) == "function")
 
 local function cleanupESP()
     for _, objs in pairs(espCache) do
@@ -416,9 +383,9 @@ local function cleanupESP()
 end
 
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0.25) do
         local cfg = Config.Visual
-        local active = cfg.ESPBox or cfg.ESPTracer or cfg.ESPHealth or cfg.ESPName or cfg.Chams
+        local active = cfg.ESPBox or cfg.ESPHealth or cfg.ESPName or cfg.Chams
 
         if not active then
             if State.ESP then
@@ -428,8 +395,6 @@ task.spawn(function()
         else
             State.ESP = true
             local myChar = Utils.getChar()
-            local cam = workspace.CurrentCamera
-            local myHRP = Utils.getHRP()
 
             for _, model in pairs(workspace:GetChildren()) do
                 if model == myChar or not model:IsA("Model") then continue end
@@ -452,30 +417,31 @@ task.spawn(function()
                         espCache[model].hl = hl
                     end
 
-                    if cfg.ESPBox and hasDrawing then
-                        local box = Drawing.new("Square")
-                        box.Thickness = 1
-                        box.Filled = false
-                        box.Color = Color3.fromRGB(255, 60, 60)
-                        box.Transparency = 1
-                        box.Visible = false
-                        espCache[model].box = box
-                    end
-
-                    if cfg.ESPTracer and hasDrawing then
-                        local tr = Drawing.new("Line")
-                        tr.Thickness = 1
-                        tr.Color = Color3.fromRGB(255, 140, 60)
-                        tr.Transparency = 1
-                        tr.Visible = false
-                        espCache[model].tracer = tr
+                    if cfg.ESPBox then
+                        local boxBB = Instance.new("BillboardGui")
+                        boxBB.Name = "CA_ESP_Box"
+                        boxBB.Size = UDim2.new(0, 50, 0, 70)
+                        boxBB.StudsOffset = Vector3.new(0, 2, 0)
+                        boxBB.AlwaysOnTop = true
+                        boxBB.Adornee = hrp
+                        boxBB.Parent = espGuiParent
+                        local boxFrame = Instance.new("Frame")
+                        boxFrame.Size = UDim2.new(1, 0, 1, 0)
+                        boxFrame.BackgroundTransparency = 1
+                        boxFrame.BorderSizePixel = 0
+                        boxFrame.Parent = boxBB
+                        local stroke = Instance.new("UIStroke")
+                        stroke.Color = Color3.fromRGB(255, 60, 60)
+                        stroke.Thickness = 2
+                        stroke.Parent = boxFrame
+                        espCache[model].boxBB = boxBB
                     end
 
                     if cfg.ESPName then
                         local bb = Instance.new("BillboardGui")
                         bb.Name = "CA_ESP_Name"
                         bb.Size = UDim2.new(0, 120, 0, 24)
-                        bb.StudsOffset = Vector3.new(0, 3, 0)
+                        bb.StudsOffset = Vector3.new(0, 4.5, 0)
                         bb.AlwaysOnTop = true
                         bb.Adornee = hrp
                         bb.Parent = espGuiParent
@@ -495,7 +461,7 @@ task.spawn(function()
                         local hb = Instance.new("BillboardGui")
                         hb.Name = "CA_ESP_HP"
                         hb.Size = UDim2.new(0, 60, 0, 6)
-                        hb.StudsOffset = Vector3.new(0, 2.3, 0)
+                        hb.StudsOffset = Vector3.new(0, 3.5, 0)
                         hb.AlwaysOnTop = true
                         hb.Adornee = hrp
                         hb.Parent = espGuiParent
@@ -523,43 +489,11 @@ task.spawn(function()
                     espCache[model] = nil
                 else
                     local hum = model:FindFirstChildOfClass("Humanoid")
-                    local hrp = model:FindFirstChild("HumanoidRootPart")
-                    if hum and hum.Health > 0 and hrp then
-                        local head = hrp.Position + Vector3.new(0, 1.5, 0)
-                        local feet = hrp.Position - Vector3.new(0, 3, 0)
-                        local hPos, on1 = cam:WorldToViewportPoint(head)
-                        local fPos, on2 = cam:WorldToViewportPoint(feet)
-                        local onScreen = on1 or on2
-
-                        if objs.box then
-                            local h = math.abs(fPos.Y - hPos.Y)
-                            local w = h / 2
-                            objs.box.Size = Vector2.new(w, h)
-                            objs.box.Position = Vector2.new(hPos.X - w/2, hPos.Y)
-                            objs.box.Visible = onScreen
+                    if hum and objs.healthBB then
+                        local fill = objs.healthBB:FindFirstChild("Fill", true)
+                        if fill then
+                            fill.Size = UDim2.new(hum.Health / hum.MaxHealth, 0, 1, 0)
                         end
-                        if objs.tracer then
-                            local mS = cam:WorldToViewportPoint(myHRP and myHRP.Position or cam.CFrame.Position)
-                            objs.tracer.From = Vector2.new(mS.X, cam.ViewportSize.Y)
-                            objs.tracer.To = Vector2.new(hPos.X, hPos.Y)
-                            objs.tracer.Visible = onScreen
-                        end
-                        if objs.nameBB then
-                            objs.nameBB.Enabled = onScreen
-                        end
-                        if objs.healthBB then
-                            objs.healthBB.Enabled = onScreen
-                            local fill = objs.healthBB:FindFirstChild("Fill", true)
-                            if fill then
-                                local pct = hum.Health / hum.MaxHealth
-                                fill.Size = UDim2.new(pct, 0, 1, 0)
-                            end
-                        end
-                    else
-                        if objs.box then objs.box.Visible = false end
-                        if objs.tracer then objs.tracer.Visible = false end
-                        if objs.nameBB then objs.nameBB.Enabled = false end
-                        if objs.healthBB then objs.healthBB.Enabled = false end
                     end
                 end
             end
@@ -617,7 +551,7 @@ end)
 -- INVISIBLE
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(1) do
         local char = Utils.getChar()
         if not char then continue end
         if Config.Visual.Invisible then
@@ -643,88 +577,10 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- HITBOX
--- ============================================================
-local origHRPSize = nil
-task.spawn(function()
-    while task.wait(0.3) do
-        local char = Utils.getChar()
-        if not char then continue end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then continue end
-
-        if Config.Visual.SelfHitbox then
-            if not origHRPSize then origHRPSize = hrp.Size end
-            pcall(function() hrp.Size = Vector3.new(Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize) end)
-            local box = char:FindFirstChild("CA_SelfHB")
-            if not box then
-                box = Instance.new("Part")
-                box.Name = "CA_SelfHB"
-                box.Size = Vector3.new(Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize, Config.Visual.SelfHitboxSize)
-                box.Transparency = 0.7
-                box.CanCollide = false
-                box.CanQuery = false
-                box.CanTouch = false
-                box.Massless = true
-                box.CFrame = hrp.CFrame
-                box.Parent = char
-                local w = Instance.new("WeldConstraint")
-                w.Part0 = hrp
-                w.Part1 = box
-                w.Parent = box
-            end
-            State.SelfHitbox = true
-        elseif State.SelfHitbox then
-            if origHRPSize then
-                pcall(function() hrp.Size = origHRPSize end)
-                origHRPSize = nil
-            end
-            local box = char:FindFirstChild("CA_SelfHB")
-            if box then box:Destroy() end
-            State.SelfHitbox = false
-        end
-
-        if Config.Visual.EnemyHitbox then
-            for _, model in pairs(workspace:GetChildren()) do
-                if model == char or not model:IsA("Model") then continue end
-                local hum = model:FindFirstChildOfClass("Humanoid")
-                if not hum or hum.Health <= 0 then continue end
-                if not model:FindFirstChild("CA_EnemyHB") then
-                    local thrp = model:FindFirstChild("HumanoidRootPart")
-                    if thrp then
-                        local box = Instance.new("Part")
-                        box.Name = "CA_EnemyHB"
-                        box.Size = Vector3.new(Config.Visual.EnemyHitboxSize, Config.Visual.EnemyHitboxSize, Config.Visual.EnemyHitboxSize)
-                        box.Transparency = 0.8
-                        box.CanCollide = false
-                        box.CanQuery = false
-                        box.CanTouch = false
-                        box.Massless = true
-                        box.CFrame = thrp.CFrame
-                        box.Parent = model
-                        local w = Instance.new("WeldConstraint")
-                        w.Part0 = thrp
-                        w.Part1 = box
-                        w.Parent = box
-                    end
-                end
-            end
-            State.EnemyHitbox = true
-        elseif State.EnemyHitbox then
-            for _, model in pairs(workspace:GetChildren()) do
-                local box = model:FindFirstChild("CA_EnemyHB")
-                if box then box:Destroy() end
-            end
-            State.EnemyHitbox = false
-        end
-    end
-end)
-
--- ============================================================
 -- ANTI-AFK
 -- ============================================================
 task.spawn(function()
-    while task.wait(60) do
+    while task.wait(120) do
         if Config.Misc.AntiAFK then
             pcall(function()
                 S.Services.VU:CaptureController()
@@ -738,7 +594,7 @@ end)
 -- AUTO TP
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(1) do
         if Config.Misc.AutoTP then
             local char = Utils.getChar()
             local hrp = Utils.getHRP()
@@ -760,6 +616,162 @@ task.spawn(function()
             if nearest then
                 hrp.CFrame = CFrame.new(nearest.Position + Vector3.new(0, 3, 0))
             end
+        end
+    end
+end)
+
+-- ============================================================
+-- AUTO REDEEM CODE (Radio Times auto-update)
+-- ============================================================
+local CODES_URL = "https://www.radiotimes.com/technology/gaming/command-an-army-codes/"
+
+local function ambilCode()
+    local ok, html = pcall(game.HttpGet, game, CODES_URL)
+    if not ok or not html or #html < 500 then
+        warn("[Code] Gagal ambil code")
+        return {}
+    end
+
+    local codes = {}
+    local seen = {}
+
+    local mulai = html:find("Active codes")
+    local selesai = html:find("expired codes")
+    if not mulai then return {} end
+
+    local bagian = html:sub(mulai, selesai or #html)
+
+    for li in bagian:gmatch("<li>(.-)</li>") do
+        local code = li:match("^%s*%-%s*([A-Z][A-Z0-9]+)")
+            or li:match("^%s*([A-Z][A-Z0-9]+)%s*%(")
+            or li:match("^%s*([A-Z][A-Z0-9]+)%s*%-")
+            or li:match("^%s*([A-Z][A-Z0-9]+)")
+        if code and #code >= 3 and #code <= 20 and not seen[code] then
+            seen[code] = true
+            table.insert(codes, code)
+        end
+    end
+
+    print(("[Code] Dapet %d code"):format(#codes))
+    return codes
+end
+
+local function cariCodeUI()
+    local PG = LP:WaitForChild("PlayerGui")
+    local interactable = PG:FindFirstChild("Interactable")
+    if not interactable then return nil, nil end
+    local codeUI = interactable:FindFirstChild("CodeUI")
+    if not codeUI then return nil, nil end
+    local textBox = codeUI:FindFirstChild("TextBox")
+    if not textBox then return nil, nil end
+
+    local tombolKlaim = nil
+    for _, c in pairs(codeUI:GetDescendants()) do
+        if (c:IsA("TextButton") or c:IsA("ImageButton")) and c.Visible then
+            local txt = string.lower(c.Text or "")
+            local nm = string.lower(c.Name)
+            if txt:find("claim") or txt:find("redeem") or txt:find("klaim")
+            or nm:find("claim") or nm:find("redeem") or nm:find("klaim") then
+                tombolKlaim = c
+                break
+            end
+        end
+    end
+
+    return textBox, tombolKlaim
+end
+
+function _G.STHAIN.RedeemAllCodes()
+    local codes = ambilCode()
+    if #codes == 0 then warn("[Code] Ga ada code") return 0 end
+
+    local tb, btn = cariCodeUI()
+    if not tb then warn("[Code] TextBox ga ketemu") return 0 end
+
+    print(("[Code] Redeem %d code..."):format(#codes))
+
+    local sukses = 0
+    for i, code in ipairs(codes) do
+        pcall(function()
+            tb:CaptureFocus()
+            task.wait(0.1)
+            tb.Text = code
+            task.wait(0.1)
+            tb:ReleaseFocus()
+        end)
+        task.wait(0.2)
+
+        if btn then
+            pcall(function() btn.MouseButton1Click:Fire() end)
+        else
+            pcall(function() tb.FocusLost:Fire(true) end)
+        end
+        sukses = sukses + 1
+        print(("[Code] [%d/%d] ✓ %s"):format(i, #codes, code))
+        task.wait(1.2)
+    end
+
+    print(("[Code] Selesai — Sukses: %d"):format(sukses))
+    return sukses
+end
+
+-- ============================================================
+-- AUTO CLAIM QUEST (Harian + Mingguan)
+-- ============================================================
+function _G.STHAIN.ClaimQuests()
+    local PG = LP:WaitForChild("PlayerGui")
+    local interactable = PG:FindFirstChild("Interactable")
+    if not interactable then
+        warn("[Misi] Interactable ga ketemu")
+        return 0
+    end
+
+    local claimed = 0
+
+    local function scanTombolKlaim(root, depth)
+        if depth > 8 then return end
+        for _, c in pairs(root:GetChildren()) do
+            if c:IsA("TextButton") or c:IsA("ImageButton") then
+                local txt = (c.Text or ""):upper()
+                local nm = c.Name:lower()
+                if txt:find("KLAIM") or txt:find("CLAIM")
+                or nm:find("claim") or nm:find("klaim") then
+                    if c.Visible and c.Active then
+                        pcall(function()
+                            if c:IsA("TextButton") then
+                                c.MouseButton1Click:Fire()
+                            end
+                        end)
+                        claimed = claimed + 1
+                        print(("[Misi] Klaim: %s | %s"):format(c.Name, c.Text))
+                        task.wait(0.3)
+                    end
+                end
+            end
+            if c:IsA("Frame") or c:IsA("ScrollingFrame") or c:IsA("CanvasGroup") then
+                scanTombolKlaim(c, depth + 1)
+            end
+        end
+    end
+
+    scanTombolKlaim(interactable, 1)
+
+    print(("[Misi] Selesai — Total klaim: %d"):format(claimed))
+    return claimed
+end
+
+task.spawn(function()
+    while task.wait(60) do
+        if Config.Misc.AutoClaimQuest then
+            pcall(function() _G.STHAIN.ClaimQuests() end)
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(60) do
+        if Config.Misc.AutoRedeemCode then
+            pcall(function() _G.STHAIN.RedeemAllCodes() end)
         end
     end
 end)
@@ -856,20 +868,6 @@ function _G.STHAIN.TeleportTo(part)
     return true
 end
 
-local function checkCaptured(supply, myTeam)
-    if not supply.capturePart then return false end
-    local okBC, bc = pcall(function() return supply.capturePart.BrickColor.Name end)
-    if okBC and bc then
-        local bcLower = string.lower(bc)
-        if myTeam == "defender" then
-            if bcLower:find("blue") or bcLower:find("navy") then return true end
-        elseif myTeam == "attacker" then
-            if bcLower:find("red") or bcLower:find("crimson") or bcLower:find("maroon") then return true end
-        end
-    end
-    return false
-end
-
 function _G.STHAIN.TeleportToEnemySupply()
     local myTeam = _G.STHAIN.GetMyTeam()
     if myTeam == "unknown" then warn("[TP] Team unknown") return false end
@@ -877,24 +875,22 @@ function _G.STHAIN.TeleportToEnemySupply()
     if #results.supplies == 0 then warn("[TP] No supplies") return false end
     local enemyTeam = (myTeam == "attacker") and "defender" or "attacker"
 
-    local fallback = nil
+    local enemySupplies = {}
     for _, sup in ipairs(results.supplies) do
         if sup.team == enemyTeam then
-            if not checkCaptured(sup, myTeam) then
-                _G.STHAIN.TeleportTo(sup.capturePart or sup.instance)
-                print("[TP] TP enemy supply:", sup.name)
-                return true
-            end
-            if not fallback then fallback = sup end
+            table.insert(enemySupplies, sup)
         end
     end
-    if fallback then
-        _G.STHAIN.TeleportTo(fallback.capturePart or fallback.instance)
-        print("[TP] TP enemy supply (fallback):", fallback.name)
-        return true
-    end
-    warn("[TP] Enemy supply not found")
-    return false
+    if #enemySupplies == 0 then warn("[TP] No enemy supply") return false end
+
+    if not _G.STHAIN._tpSupplyIndex then _G.STHAIN._tpSupplyIndex = 0 end
+    _G.STHAIN._tpSupplyIndex = _G.STHAIN._tpSupplyIndex + 1
+    if _G.STHAIN._tpSupplyIndex > #enemySupplies then _G.STHAIN._tpSupplyIndex = 1 end
+
+    local target = enemySupplies[_G.STHAIN._tpSupplyIndex]
+    _G.STHAIN.TeleportTo(target.capturePart or target.instance)
+    print(("[TP] TP enemy supply #%d/%d: %s"):format(_G.STHAIN._tpSupplyIndex, #enemySupplies, target.name))
+    return true
 end
 
 function _G.STHAIN.TeleportToOwnSupply()
@@ -953,13 +949,8 @@ function _G.STHAIN.TeleportToBase()
     return false
 end
 
-function _G.STHAIN.TeleportToPointA()
-    return tpToNamed("pointa")
-end
-
-function _G.STHAIN.TeleportToPointB()
-    return tpToNamed("pointb")
-end
+function _G.STHAIN.TeleportToPointA() return tpToNamed("pointa") end
+function _G.STHAIN.TeleportToPointB() return tpToNamed("pointb") end
 
 function _G.STHAIN.TeleportToNearestEnemy()
     local char = Utils.getChar()
@@ -1018,25 +1009,33 @@ function _G.STHAIN.TeleportToTeammate()
 end
 
 -- ============================================================
--- CONFIG SAVE / LOAD
+-- CONFIG SAVE / LOAD (FINAL)
 -- ============================================================
+local CONFIG_FILE = "sthain_config.json"
+local configLoaded = false
+
 function _G.STHAIN.SaveConfig()
     if not writefile then return false end
     local ok = pcall(function()
-        writefile("sthain_config.json", game:GetService("HttpService"):JSONEncode(_G.STHAIN.Config))
+        writefile(CONFIG_FILE, game:GetService("HttpService"):JSONEncode(_G.STHAIN.Config))
     end)
+    if ok then print("[Config] Saved") end
     return ok
 end
 
 function _G.STHAIN.LoadConfig()
     if not readfile then return false end
-    local ok, data = pcall(readfile, "sthain_config.json")
-    if ok and data then
+    local ok, data = pcall(readfile, CONFIG_FILE)
+    if ok and data and #data > 0 then
         local ok2, dec = pcall(function()
             return game:GetService("HttpService"):JSONDecode(data)
         end)
-        if ok2 then
-            for k, v in pairs(dec) do _G.STHAIN.Config[k] = v end
+        if ok2 and type(dec) == "table" then
+            for k, v in pairs(dec) do
+                _G.STHAIN.Config[k] = v
+            end
+            configLoaded = true
+            print("[Config] Loaded")
             return true
         end
     end
@@ -1045,21 +1044,35 @@ end
 
 function _G.STHAIN.DeleteConfig()
     if not delfile then return false end
-    pcall(function() delfile("sthain_config.json") end)
+    pcall(function() delfile(CONFIG_FILE) end)
+    configLoaded = false
+    print("[Config] Deleted")
     return true
 end
 
 task.spawn(function()
-    while task.wait(60) do
+    while task.wait(30) do
         if _G.STHAIN.Config and _G.STHAIN.Config.Config and _G.STHAIN.Config.Config.AutoSave then
-            if _G.STHAIN.SaveConfig then _G.STHAIN.SaveConfig() end
+            _G.STHAIN.SaveConfig()
         end
     end
 end)
 
 task.spawn(function()
-    task.wait(3)
-    if _G.STHAIN.LoadConfig then _G.STHAIN.LoadConfig() end
+    pcall(function()
+        game:BindToClose(function()
+            if _G.STHAIN.Config and _G.STHAIN.Config.Config and _G.STHAIN.Config.Config.AutoSave then
+                _G.STHAIN.SaveConfig()
+            end
+        end)
+    end)
+end)
+
+task.spawn(function()
+    task.wait(2)
+    if not configLoaded then
+        _G.STHAIN.LoadConfig()
+    end
 end)
 
 -- ============================================================
@@ -1067,12 +1080,8 @@ end)
 -- ============================================================
 LP.CharacterAdded:Connect(function(char)
     task.wait(1.5)
-    origHRPSize = nil
-    lastSafePos = nil
     State.Invisible = false
     State.Noclip = false
-    State.SelfHitbox = false
-    State.EnemyHitbox = false
     State.Fly = false
     if flyConn then stopFly() end
     cleanupESP()
@@ -1080,4 +1089,4 @@ LP.CharacterAdded:Connect(function(char)
     print("[STHAIN] Respawned, features reset")
 end)
 
-print("[STHAIN] Logic loaded - FINAL FIX v3")
+print("[STHAIN] Logic loaded - FINAL FIX v5")

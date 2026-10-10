@@ -263,7 +263,7 @@ S.Comp.makeToggle(autoClaimContent, "Auto Claim Quest", XX.AutoClaimQuest or fal
     XX.AutoClaimQuest = v
     save()
 end)
-S.Comp.makeButton(autoClaimContent, "Klaim Misi Sekarang", function()
+S.Comp.makeButton(autoClaimContent, "Claim Quest Now", function()
     if _G.STHAIN.ClaimQuests then
         _G.STHAIN.ClaimQuests()
     end
@@ -272,7 +272,7 @@ S.Comp.makeToggle(autoClaimContent, "Auto Redeem Code", XX.AutoRedeemCode or fal
     XX.AutoRedeemCode = v
     save()
 end)
-S.Comp.makeButton(autoClaimContent, "Redeem Semua Code Sekarang", function()
+S.Comp.makeButton(autoClaimContent, "Claim All Code Now", function()
     if _G.STHAIN.RedeemAllCodes then
         _G.STHAIN.RedeemAllCodes()
     end

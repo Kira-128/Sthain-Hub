@@ -57,7 +57,7 @@ local Config = {
         OffsetY        = 5,
     },
     Config = {
-        AutoSave = true,
+        AutoSave = false,
     },
 }
 

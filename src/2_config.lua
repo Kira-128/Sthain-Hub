@@ -45,6 +45,7 @@ local Config = {
         WeaponRange     = false,
         AutoTP          = false,
         AntiAFK         = true,
+        AutoClaimQuest  = false,
         RangeMultiplier = 3,
         AutoTPRange     = 100,
     },

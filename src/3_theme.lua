@@ -1,25 +1,25 @@
 --[[
 ============================================================
-  [3] THEME — Dark Grey Modern Style
+  [3] THEME — Dark Grey Monochrome
 ============================================================
 ]]
 
 local Theme = {
     Colors = {
-        -- Background hierarchy (makin ke atas makin terang)
-        bg       = Color3.fromRGB(18, 18, 21),    -- background utama (paling gelap)
-        bg2      = Color3.fromRGB(26, 26, 30),    -- sidebar / panel
-        bg3      = Color3.fromRGB(32, 32, 36),    -- card / section
-        bg4      = Color3.fromRGB(38, 38, 43),    -- card dalam / item
-        panel    = Color3.fromRGB(22, 22, 26),    -- main panel background
+        -- Background hierarchy
+        bg       = Color3.fromRGB(18, 18, 21),
+        bg2      = Color3.fromRGB(26, 26, 30),
+        bg3      = Color3.fromRGB(32, 32, 36),
+        bg4      = Color3.fromRGB(38, 38, 43),
+        panel    = Color3.fromRGB(22, 22, 26),
 
-        -- Accent (ungu modern)
-        accent   = Color3.fromRGB(123, 104, 238),
+        -- Accent (putih keabuan)
+        accent   = Color3.fromRGB(224, 224, 230),
 
         -- Text hierarchy
-        text     = Color3.fromRGB(240, 240, 245), -- text primary (putih soft)
-        textDim  = Color3.fromRGB(160, 160, 170), -- text secondary (abu terang)
-        textDim2 = Color3.fromRGB(110, 110, 120), -- text tertiary (abu gelap)
+        text     = Color3.fromRGB(240, 240, 245),
+        textDim  = Color3.fromRGB(160, 160, 170),
+        textDim2 = Color3.fromRGB(110, 110, 120),
 
         -- Status colors
         green    = Color3.fromRGB(80, 220, 130),
@@ -28,8 +28,8 @@ local Theme = {
         blue     = Color3.fromRGB(80, 160, 240),
 
         -- Border / stroke
-        stroke   = Color3.fromRGB(45, 45, 52),    -- garis tipis
-        stroke2  = Color3.fromRGB(58, 58, 66),    -- garis medium
+        stroke   = Color3.fromRGB(45, 45, 52),
+        stroke2  = Color3.fromRGB(58, 58, 66),
     },
 
     Icons = {
@@ -48,7 +48,6 @@ local Theme = {
         medium = Enum.Font.GothamMedium,
     },
 
-    -- Radius standar
     Radius = {
         small = UDim.new(0, 4),
         medium = UDim.new(0, 6),
@@ -59,4 +58,4 @@ local Theme = {
 
 _G.STHAIN.Theme = Theme
 
-print("[STHAIN] Theme loaded (Dark Grey Modern)")
+print("[STHAIN] Theme loaded (Dark Grey Monochrome)")
